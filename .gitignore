@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+pip-wheel-metadata/
+
+# Packaging / locks (keep project lockfiles if added; ignore local ones)
+# uv.lock / poetry.lock are intentionally tracked when used for reproducibility.
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Type checking / lint
+.mypy_cache/
+.ruff_cache/
+
+# Experiments (keep definitions, ignore large outputs)
+experiments/results/*/
+!experiments/results/README.md
+!experiments/results/.gitkeep
+
+# Datasets (code + docs tracked; raw dumps ignored)
+datasets/raw/
+datasets/*.sqlite
+datasets/*.parquet
+*.csv.gz
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.envrc

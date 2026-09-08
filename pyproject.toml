@@ -1,0 +1,26 @@
+[project]
+name = "deplens"
+version = "0.0.0"
+description = "Research scaffold for dependency-change impact prediction (Python)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "DepLens Contributors" }]
+keywords = ["dependencies", "static-analysis", "research", "reproducibility"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.4"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/deplens"]
+
+[tool.ruff]
+target-version = "py310"
+src = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
