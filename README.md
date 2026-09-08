@@ -295,7 +295,7 @@ No code of conduct or governance is defined yet — that is part of Phase 0 foll
 
 ## 15. License
 
-MIT License — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](LICENSE).
 
 Dataset contents may carry their own upstream licenses; each dataset entry documents its provenance and license in `datasets/README.md`.
 

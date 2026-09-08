@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "Research scaffold for dependency-change impact prediction (Python)."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 authors = [{ name = "DepLens Contributors" }]
 keywords = ["dependencies", "static-analysis", "research", "reproducibility"]
 
