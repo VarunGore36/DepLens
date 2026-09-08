@@ -1,5 +1,5 @@
-# `graph` — Status: `planned` (Phase 1)
+# `graph` — Status: `in progress` (Phase 1)
 
-Direct/transitive dependency graph: version constraints, depth, centrality, package metadata.
+Direct/transitive dependency graph: version constraints, depth, dependents/dependencies, serializable snapshot. Centrality and package metadata — `planned`.
 
-Not yet implemented. See `docs/roadmap.md`.
+See `docs/roadmap.md`.

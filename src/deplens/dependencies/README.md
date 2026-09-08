@@ -1,9 +1,9 @@
-# `dependencies` — Status: `planned` (Phase 1)
+# `dependencies` — Status: `in progress` (Phase 1)
 
 Parses Python dependency specifications:
 
 - `requirements.txt`
 - `pyproject.toml` (PEP 621 + Poetry)
-- lockfiles where practical (`poetry.lock`, `uv.lock`, `Pipfile.lock`)
+- lockfiles (`poetry.lock`, `uv.lock`, `Pipfile.lock`) — `planned`
 
-Not yet implemented. See `docs/roadmap.md`.
+See `docs/roadmap.md`.

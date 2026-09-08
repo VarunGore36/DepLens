@@ -247,7 +247,7 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 
 - [x] Project framing, research questions, methodology, roadmap
 - [x] Repository scaffold (docs, `src/deplens/*`, `experiments/`, `datasets/`, `tests/`, `scripts/`)
-- [ ] Phase 1: dependency graph — not started
+- [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml parsing, graph model with depth/dependents; lockfiles and transitive resolution pending)
 - [ ] Phase 2: code usage analysis — not started
 - [ ] Phase 3+: dataset, baselines, evaluation — not started
 
