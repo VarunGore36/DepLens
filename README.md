@@ -249,7 +249,8 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 - [x] Repository scaffold (docs, `src/deplens/*`, `experiments/`, `datasets/`, `tests/`, `scripts/`)
 - [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
 - [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
-- [ ] Phase 3+: dataset, baselines, evaluation — not started
+- [ ] Phase 3: dependency update dataset — in progress (git-history update detection with per-package old/new constraints; CI/test outcome labeling pending)
+- [ ] Phases 4+: baselines, evaluation — not started
 
 **DepLens cannot currently predict dependency failures.** This repository is a research scaffold for investigating whether reliable prediction is possible.
 

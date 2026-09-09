@@ -1,5 +1,3 @@
-# `updates` — Status: `planned` (Phase 3)
+# `updates` — Status: `in progress` (Phase 3)
 
-Detects historical dependency updates from Git history (Dependabot/Renovate/manual bumps) and links them to test/build outcomes.
-
-Not yet implemented. See `docs/methodology.md`.
+`detection.py` mines dependency bumps from git history by diffing parsed dependency files per commit (`UpdateRecord` with old/new constraints, added/removed/updated). Outcome labeling (CI/test results) — `planned`.
