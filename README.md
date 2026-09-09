@@ -252,7 +252,8 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 - [ ] Phase 3: dependency update dataset — in progress (git-history update detection with per-package old/new constraints, heuristic revert/fix-commit labeling; CI/test outcome labeling pending)
 - [ ] Phase 4: baselines — in progress (four roadmap heuristics plus a code-usage rule for RQ4 ablation)
 - [ ] Phase 5: evaluation — in progress (binary metrics, Brier score, per-rule scoring, metadata-vs-usage ablation; temporal splits and per-stratum reporting pending)
-- [ ] Phases 6+: advanced methods, developer tool — not started
+- [ ] Phase 6: advanced methods — initial implementation, unevaluated (graph features, grid-fit hybrid model, experimental LLM-adapter seam; no ML/embeddings evaluation on real data yet)
+- [ ] Phase 7: developer tool — initial implementation, usefulness undemonstrated (`deplens analyze|predict|updates` CLI, JSON/markdown reports, 0–100 risk scoring, GitHub workflow + PR comments)
 
 **DepLens cannot currently predict dependency failures.** This repository is a research scaffold for investigating whether reliable prediction is possible.
 

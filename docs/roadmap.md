@@ -9,40 +9,49 @@ Status legend: `implemented` / `in progress` / `planned` / `experimental` / `hyp
 - [ ] Contribution guide, code of conduct
 - [ ] Experiment tracking convention, CI scaffold
 
-## Phase 1 — Dependency graph (`planned`)
+## Phase 1 — Dependency graph (`in progress`)
 
-- Parse `requirements.txt`, `pyproject.toml`, lockfiles where practical
-- Construct direct/transitive graph
-- Represent version constraints, support package metadata
+- [x] Parse `requirements.txt`, `pyproject.toml`, lockfiles (poetry/uv/Pipfile)
+- [x] Construct direct/transitive graph, version constraints
+- [x] Graph features: depth, dependents, fan-in/fan-out, degree centrality
+- [ ] Live transitive resolution via package metadata
 - Module: `src/deplens/dependencies/`, `src/deplens/graph/`
 
-## Phase 2 — Code usage analysis (`planned`)
+## Phase 2 — Code usage analysis (`in progress`)
 
-- Parse Python source (AST), identify imports
-- Map imports → dependencies
-- Investigate function/class/API-level relationships
+- [x] Parse Python source (AST), identify imports
+- [x] Map imports → dependencies (stdlib filter, alias table)
+- [x] Qualified API-usage tracking with per-dependency filtering
+- [ ] Scope/shadowing precision, relative and star imports
 - Module: `src/deplens/analysis/`
 
-## Phase 3 — Dependency update dataset (`planned`)
+## Phase 3 — Dependency update dataset (`in progress`)
 
-- Identify historical updates, collect repos/commits
-- Determine failures, establish ground-truth labels
+- [x] Identify historical updates from git history
+- [x] Heuristic labels (reverts, fix-commits)
+- [ ] CI/test outcome labeling, curated dataset in `datasets/`
 - Module: `src/deplens/updates/` + `datasets/`
 
-## Phase 4 — Baselines (`planned`)
+## Phase 4 — Baselines (`in progress`)
 
-- Major-version heuristic, direct-dependency heuristic, API-change heuristic, depth heuristic
+- [x] Major-version, direct-dependency, API-change, depth, code-usage heuristics
+- [x] Measured `UpdateCase` builder from graph + usage
 - Module: `src/deplens/prediction/`, definitions in `experiments/baselines/`
 
-## Phase 5 — Evaluation (`planned`)
+## Phase 5 — Evaluation (`in progress`)
 
-- Precision, recall, F1, FP/FN rates, calibration
+- [x] Precision, recall, F1, FP/FN rates, calibration (Brier), per-rule scoring, metadata-vs-usage ablation
+- [ ] Temporal splits, per-stratum reporting, published results
 - Module: `src/deplens/evaluation/`
 
-## Phase 6 — Advanced methods (`experimental / planned`)
+## Phase 6 — Advanced methods (`in progress`, unevaluated)
 
-- Graph features, classical ML, code embeddings, LLM-assisted API analysis, hybrids
+- [x] Graph features, grid-fit hybrid model, LLM-adapter seam (`ApiDiffProvider`)
+- [ ] Classical ML on real data, code embeddings, evaluated LLM backend
+- All Phase 6 outputs are unevaluated until run against a real labeled dataset.
 
-## Phase 7 — Developer tool (`hypothetical`)
+## Phase 7 — Developer tool (`in progress`, conditional)
 
-- Only if research justifies it: CLI, reports, GitHub Action, PR comments, risk scoring
+- [x] CLI (`deplens analyze|predict|updates`), JSON/markdown reports, risk scoring, GitHub workflow + PR comments
+- [ ] Validation that scores are useful before recommending adoption
+- Tooling exists for research use; usefulness is not yet demonstrated.

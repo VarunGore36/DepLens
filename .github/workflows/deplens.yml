@@ -1,0 +1,36 @@
+name: deplens
+
+on:
+  pull_request:
+    paths:
+      - "requirements*.txt"
+      - "requirements*.in"
+      - "requirements*.lock"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "uv.lock"
+      - "Pipfile.lock"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run --with deplens deplens analyze . --format markdown > deplens-report.md
+      - run: uv run --with deplens deplens updates . > deplens-updates.json || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deplens-report
+          path: |
+            deplens-report.md
+            deplens-updates.json
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/post_pr_comment.py deplens-report.md
