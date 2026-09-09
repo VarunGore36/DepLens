@@ -13,7 +13,7 @@ def test_score_rules_perfect_major_signal():
     assert scores["major-version"].accuracy == 1.0
     assert scores["direct-dependency"].accuracy == 1.0
     assert scores["dependency-depth"].accuracy == 0.0
-    assert set(scores) == {"major-version", "direct-dependency", "api-change", "dependency-depth"}
+    assert set(scores) == {"major-version", "direct-dependency", "api-change", "dependency-depth", "code-usage"}
 
 
 def test_score_rules_length_mismatch():

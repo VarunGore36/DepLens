@@ -7,7 +7,14 @@ from deplens.prediction import (
     major_version_heuristic,
     run_baselines,
     semver_change,
+    usage_heuristic,
 )
+
+
+def test_usage_heuristic():
+    assert usage_heuristic(UpdateCase("a", affected_imports=2)).label is True
+    assert usage_heuristic(UpdateCase("a", affected_apis=1)).label is True
+    assert usage_heuristic(UpdateCase("a")).label is False
 
 
 def test_semver_change():
@@ -52,6 +59,7 @@ def test_run_baselines_returns_all_rules():
     predictions = run_baselines(UpdateCase("a", "1.0.0", "2.0.0", direct=True, depth=1))
     assert sorted(p.rule for p in predictions) == [
         "api-change",
+        "code-usage",
         "dependency-depth",
         "direct-dependency",
         "major-version",

@@ -250,8 +250,8 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 - [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
 - [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
 - [ ] Phase 3: dependency update dataset — in progress (git-history update detection with per-package old/new constraints, heuristic revert/fix-commit labeling; CI/test outcome labeling pending)
-- [ ] Phase 4: baselines — in progress (major-version, direct-dependency, API-change, depth heuristics over UpdateCase)
-- [ ] Phase 5: evaluation — in progress (binary metrics + Brier score; temporal splits and ablations pending)
+- [ ] Phase 4: baselines — in progress (four roadmap heuristics plus a code-usage rule for RQ4 ablation)
+- [ ] Phase 5: evaluation — in progress (binary metrics, Brier score, per-rule scoring, metadata-vs-usage ablation; temporal splits and per-stratum reporting pending)
 - [ ] Phases 6+: advanced methods, developer tool — not started
 
 **DepLens cannot currently predict dependency failures.** This repository is a research scaffold for investigating whether reliable prediction is possible.

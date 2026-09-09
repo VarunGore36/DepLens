@@ -9,6 +9,7 @@ from deplens.prediction.baselines import (
     major_version_heuristic,
     run_baselines,
     semver_change,
+    usage_heuristic,
 )
 from deplens.prediction.cases import build_case
 
@@ -24,4 +25,5 @@ __all__ = [
     "major_version_heuristic",
     "run_baselines",
     "semver_change",
+    "usage_heuristic",
 ]

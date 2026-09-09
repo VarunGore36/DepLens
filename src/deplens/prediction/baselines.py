@@ -82,11 +82,20 @@ def depth_heuristic(case: UpdateCase, threshold: int = 2) -> Prediction:
     )
 
 
+def usage_heuristic(case: UpdateCase) -> Prediction:
+    return _decide(
+        "code-usage",
+        case.package,
+        case.affected_imports > 0 or case.affected_apis > 0,
+    )
+
+
 BASELINES = {
     "major-version": major_version_heuristic,
     "direct-dependency": direct_dependency_heuristic,
     "api-change": api_change_heuristic,
     "dependency-depth": depth_heuristic,
+    "code-usage": usage_heuristic,
 }
 
 
