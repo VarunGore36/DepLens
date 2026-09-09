@@ -10,12 +10,14 @@ from deplens.prediction.baselines import (
     run_baselines,
     semver_change,
 )
+from deplens.prediction.cases import build_case
 
 __all__ = [
     "BASELINES",
     "Prediction",
     "UpdateCase",
     "api_change_heuristic",
+    "build_case",
     "coerce_version",
     "depth_heuristic",
     "direct_dependency_heuristic",
