@@ -1,3 +1,4 @@
 # scripts
 
 - `post_pr_comment.py` — posts (or updates) the DepLens report comment on a PR via the GitHub API using only stdlib. Needs `GH_TOKEN`, `GITHUB_REPOSITORY`, and `PR_NUMBER`. Status: `in progress` (Phase 7).
+- `first_experiment.py` — end-to-end smoke run over real repos: detects recent updates, reconstructs each parent commit via `git archive`, builds measured cases, scores all rules, and writes `metrics.json` / `cases.jsonl` / `config.yaml` / `README.md` to an `experiments/results/` directory. Labels are weak heuristics. Status: `in progress` (Phase 3/5).

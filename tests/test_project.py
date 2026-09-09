@@ -11,6 +11,9 @@ def test_discover_and_analyze(tmp_path):
     assert analysis["parse_errors"] == []
     assert analysis["imports"]["stdlib"] == 1
     assert analysis["usage"]["count"] == 0
+    assert "objects" not in analysis
+    with_objects = analyze_project(tmp_path, include_objects=True)
+    assert with_objects["objects"]["graph"].depth("requests") == 1
 
 
 def test_analyze_records_parse_errors(tmp_path):

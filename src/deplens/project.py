@@ -38,7 +38,7 @@ def _parse_file(path: Path) -> ParsedDependencies:
     return parse_requirements_file(path)
 
 
-def analyze_project(root: str | Path) -> dict:
+def analyze_project(root: str | Path, include_objects: bool = False) -> dict:
     base = Path(root)
     specs: list = []
     errors: list[str] = []
@@ -55,7 +55,7 @@ def analyze_project(root: str | Path) -> dict:
     links = link_imports(imports.records, graph.direct_dependencies())
     linked = sum(1 for link in links if link.dependency is not None)
     stdlib = sum(1 for link in links if link.stdlib)
-    return {
+    result = {
         "root": str(base),
         "dependency_files": [str(p) for p in files],
         "parse_errors": errors,
@@ -73,3 +73,6 @@ def analyze_project(root: str | Path) -> dict:
             "qualified": usages.qualified_names(),
         },
     }
+    if include_objects:
+        result["objects"] = {"graph": graph, "links": links, "usages": usages.usages}
+    return result

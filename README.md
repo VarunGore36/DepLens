@@ -246,7 +246,7 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 ## 11. Current Status
 
 - [x] Project framing, research questions, methodology, roadmap
-- [x] Repository scaffold (docs, `src/deplens/*`, `experiments/`, `datasets/`, `tests/`, `scripts/`)
+- [x] First real-data smoke run — 40 updates across `requests`/`httpx` with parent-commit features and weak labels (`experiments/results/2026-09-09-first-run/`); numbers are pipeline validation, not evidence
 - [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
 - [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
 - [ ] Phase 3: dependency update dataset — in progress (git-history update detection with per-package old/new constraints, heuristic revert/fix-commit labeling; CI/test outcome labeling pending)
