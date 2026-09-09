@@ -7,7 +7,7 @@ Status legend: `implemented` / `in progress` / `planned` / `experimental` / `hyp
 - [x] Repository structure
 - [x] Research questions, methodology, roadmap docs
 - [ ] Contribution guide, code of conduct
-- [ ] Experiment tracking convention, CI scaffold
+- [x] Experiment tracking convention, repo CI (pytest + ruff)
 
 ## Phase 1 — Dependency graph (`in progress`)
 
@@ -41,7 +41,8 @@ Status legend: `implemented` / `in progress` / `planned` / `experimental` / `hyp
 ## Phase 5 — Evaluation (`in progress`)
 
 - [x] Precision, recall, F1, FP/FN rates, calibration (Brier), per-rule scoring, metadata-vs-usage ablation
-- [ ] Temporal splits, per-stratum reporting, published results
+- [x] Temporal splits, per-stratum reporting
+- [ ] Published results on real labeled data
 - Module: `src/deplens/evaluation/`
 
 ## Phase 6 — Advanced methods (`in progress`, unevaluated)
