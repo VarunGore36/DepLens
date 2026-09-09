@@ -1,5 +1,3 @@
-# `analysis` — Status: `planned` (Phase 2)
+# `analysis` — Status: `in progress` (Phase 2)
 
-Python source parsing (AST): imports, import→dependency mapping, function/class/API usage where feasible.
-
-Not yet implemented. See `docs/roadmap.md`.
+AST import parsing (`imports.py`), directory collection, stdlib filtering and import→dependency linking with alias table (`linking.py`), qualified API usage tracking with per-dependency filtering (`usage.py`). Scope-limited (no scope/shadowing analysis, relative imports skipped) — see module docstrings.

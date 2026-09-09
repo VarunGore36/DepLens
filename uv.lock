@@ -17,6 +17,7 @@ version = "0.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "packaging" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 
 [package.optional-dependencies]
@@ -30,6 +31,7 @@ requires-dist = [
     { name = "packaging", specifier = ">=24" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2" },
 ]
 provides-extras = ["dev"]
 
