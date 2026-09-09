@@ -51,9 +51,9 @@ def _from_poetry_entry(name: str, entry: object, source: str) -> DependencySpec 
         constraint = version if version != "*" else ""
         raw = f"{name} {constraint}".strip() if constraint else name
     elif isinstance(entry, list):
-        raise ValueError(f"{source}: multi-constraint poetry entry for {name!r} not supported in Phase 1")
+        raise ValueError(f"{source}: multi-constraint poetry entry for {name!r} not supported in Phase 1")  # noqa: TRY004
     else:
-        raise ValueError(f"{source}: unsupported poetry entry for {name!r}: {entry!r}")
+        raise ValueError(f"{source}: unsupported poetry entry for {name!r}: {entry!r}")  # noqa: TRY004
     return DependencySpec(
         name=canonicalize_name(name),
         raw=raw,

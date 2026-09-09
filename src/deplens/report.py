@@ -46,8 +46,10 @@ def analysis_markdown(analysis: dict) -> str:
         "",
         "## Code usage",
         "",
-        f"Imports: {imports['count']} ({imports['linked']} linked, "
-        f"{imports['stdlib']} stdlib, {imports['unresolved']} unresolved)",
+        (
+            f"Imports: {imports['count']} ({imports['linked']} linked, "
+            f"{imports['stdlib']} stdlib, {imports['unresolved']} unresolved)"
+        ),
         f"Distinct APIs used: {len(usage['qualified'])}",
         "",
     ]

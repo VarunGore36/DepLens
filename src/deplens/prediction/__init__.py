@@ -28,9 +28,9 @@ from deplens.prediction.llm import (
 )
 
 __all__ = [
+    "BASELINES",
     "ApiChange",
     "ApiDiffProvider",
-    "BASELINES",
     "EmptyApiDiffProvider",
     "HybridWeights",
     "Prediction",

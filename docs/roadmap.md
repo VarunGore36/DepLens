@@ -27,7 +27,7 @@ Status legend: `implemented` / `in progress` / `planned` / `experimental` / `hyp
 
 ## Phase 3 — Dependency update dataset (`in progress`)
 
-- [x] Identify historical updates from git history
+- [x] Identify historical updates from git history (deduplicated, marker/extras-sensitive diff)
 - [x] Heuristic labels (reverts, fix-commits)
 - [ ] CI/test outcome labeling, curated dataset in `datasets/`
 - Module: `src/deplens/updates/` + `datasets/`

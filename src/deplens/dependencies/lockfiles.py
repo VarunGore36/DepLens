@@ -37,7 +37,7 @@ def parse_poetry_lock_text(text: str, source: str = "poetry.lock") -> ParsedDepe
     data = _loads_toml(text, source)
     packages = data.get("package", [])
     if not isinstance(packages, list):
-        raise ValueError(f"{source}: expected [[package]] list")
+        raise ValueError(f"{source}: expected [[package]] list")  # noqa: TRY004
     specs = [
         _pinned(str(pkg["name"]), str(pkg.get("version", "")), f"{source}:package[{pkg.get('name')}]")
         for pkg in packages
@@ -50,7 +50,7 @@ def parse_uv_lock_text(text: str, source: str = "uv.lock") -> ParsedDependencies
     data = _loads_toml(text, source)
     packages = data.get("package", [])
     if not isinstance(packages, list):
-        raise ValueError(f"{source}: expected [[package]] list")
+        raise ValueError(f"{source}: expected [[package]] list")  # noqa: TRY004
     specs = [
         _pinned(str(pkg["name"]), str(pkg.get("version", "")), f"{source}:package[{pkg.get('name')}]")
         for pkg in packages
@@ -68,7 +68,7 @@ def parse_pipfile_lock_text(text: str, source: str = "Pipfile.lock") -> ParsedDe
     for section in ("default", "develop"):
         entries = data.get(section, {}) or {}
         if not isinstance(entries, dict):
-            raise ValueError(f"{source}: expected object for {section!r}")
+            raise ValueError(f"{source}: expected object for {section!r}")  # noqa: TRY004
         for name, meta in entries.items():
             version = ""
             if isinstance(meta, dict):

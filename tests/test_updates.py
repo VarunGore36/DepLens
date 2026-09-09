@@ -10,6 +10,7 @@ def _git(repo, *args):
         ["git", "-c", "user.email=t@t", "-c", "user.name=t", "-C", str(repo), *args],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 0, result.stderr
     return result.stdout
@@ -44,7 +45,7 @@ def test_detect_updates(repo):
     assert len(records) == 3
     bumped = updates_for_package(records, "requests")
     assert len(bumped) == 2
-    updated = [r for r in bumped if r.change == "updated"][0]
+    updated = next(r for r in bumped if r.change == "updated")
     assert updated.old_constraint == "==2.28.0"
     assert updated.new_constraint == "==2.31.0"
     assert updated.file == "requirements.txt"
@@ -55,3 +56,28 @@ def test_detect_updates(repo):
 def test_non_git_dir_raises(tmp_path):
     with pytest.raises(ValueError, match="failed"):
         detect_updates(tmp_path)
+
+
+def test_duplicate_lines_not_reported_as_update(tmp_path):
+    _git(tmp_path, "init", "-q")
+    (tmp_path / "requirements.txt").write_text("requests==2.28.0\n")
+    _git(tmp_path, "add", "requirements.txt")
+    _git(tmp_path, "commit", "-qm", "initial")
+    (tmp_path / "requirements.txt").write_text("requests==2.28.0\nrequests==2.28.0\n")
+    _git(tmp_path, "add", "requirements.txt")
+    _git(tmp_path, "commit", "-qm", "duplicate line")
+    records = updates_for_package(detect_updates(tmp_path), "requests")
+    assert [r for r in records if r.change == "updated"] == []
+
+
+def test_marker_only_change_reported_as_update(tmp_path):
+    _git(tmp_path, "init", "-q")
+    (tmp_path / "requirements.txt").write_text("requests==2.28.0\n")
+    _git(tmp_path, "add", "requirements.txt")
+    _git(tmp_path, "commit", "-qm", "initial")
+    (tmp_path / "requirements.txt").write_text("requests==2.28.0; python_version > '3.8'\n")
+    _git(tmp_path, "add", "requirements.txt")
+    _git(tmp_path, "commit", "-qm", "add marker")
+    records = updates_for_package(detect_updates(tmp_path), "requests")
+    updated = [r for r in records if r.change == "updated"]
+    assert len(updated) == 1 and "python_version" in (updated[0].new_constraint or "")

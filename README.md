@@ -246,7 +246,8 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 ## 11. Current Status
 
 - [x] Project framing, research questions, methodology, roadmap
-- [x] First real-data smoke run — 40 updates across `requests`/`httpx` with parent-commit features and weak labels (`experiments/results/2026-09-09-first-run/`); numbers are pipeline validation, not evidence
+- [x] First real-data smoke run — 40 updates across `requests`/`httpx` with parent-commit features and weak labels (`experiments/results/2026-09-09-first-run/`); re-ran after fixing the duplicate-line phantom-update bug, 1 weak positive; numbers are pipeline validation, not evidence
+- [x] Lint-clean (`ruff check`) and 70 tests green
 - [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
 - [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
 - [ ] Phase 3: dependency update dataset — in progress (git-history update detection with per-package old/new constraints, heuristic revert/fix-commit labeling; CI/test outcome labeling pending)
@@ -259,7 +260,32 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 
 Legend used throughout docs: `implemented` / `in progress` / `planned` / `experimental` / `hypothetical`.
 
-## 12. Reproducibility Philosophy
+## 12. Running DepLens
+
+Requires Python 3.10+ and `uv` (or `pip`).
+
+```bash
+uv sync  # one-time setup; or: pip install -e .
+
+# Analyze a Python project directory (JSON default, --format markdown available)
+uv run deplens analyze /path/to/project
+
+# Score one hypothetical update
+uv run deplens predict --package requests --old 1.0.0 --new 2.0.0 --affected-imports 3
+
+# Labeled dependency-update history of a git checkout
+uv run deplens updates /path/to/git-repo
+
+# Test suite and lint
+uv run --with pytest pytest -q
+uv run --with ruff ruff check src tests scripts
+```
+
+`updates` needs a git checkout (it shells out to `git log`/`git show`); `analyze`
+works on any directory and reports unparsable files under `parse_errors` instead
+of crashing. Outputs are unevaluated research signals, not predictions.
+
+## 13. Reproducibility Philosophy
 
 - Everything needed to reproduce a result (code + data pointers + environment + seeds) is versioned.
 - Experiments write structured outputs to `experiments/results/`; never overwrite prior results silently.
@@ -267,7 +293,7 @@ Legend used throughout docs: `implemented` / `in progress` / `planned` / `experi
 - Negative results are results: failed signals and poorly calibrated models are reported, not hidden.
 - No "it worked on my machine": lockfiles, pinned dev dependencies, and CI checks are required once code lands.
 
-## 13. Future Possibilities
+## 14. Future Possibilities
 
 Status: `hypothetical` — pursued only if Phases 3–5 justify it.
 
@@ -279,7 +305,7 @@ Status: `hypothetical` — pursued only if Phases 3–5 justify it.
 
 These are not commitments. They are conditional directions.
 
-## 14. Contributing
+## 15. Contributing
 
 Research-stage contributions are welcome, especially:
 
@@ -297,7 +323,7 @@ Process:
 
 No code of conduct or governance is defined yet — that is part of Phase 0 follow-up.
 
-## 15. License
+## 16. License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
 

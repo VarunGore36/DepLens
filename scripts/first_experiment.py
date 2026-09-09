@@ -23,6 +23,7 @@ def export_parent(repo: str, commit: str, dest: Path) -> bool:
     archive = subprocess.run(
         ["git", "-C", repo, "archive", commit],
         capture_output=True,
+        check=False,
     )
     if archive.returncode != 0:
         return False
@@ -118,7 +119,7 @@ def main() -> int:
     (out / "cases.jsonl").write_text("\n".join(json.dumps(r, sort_keys=True) for r in all_rows))
     config = (
         f"experiment: first-run\n"
-        f"date: {datetime.date.today().isoformat()}\n"
+        f"date: {datetime.datetime.now(datetime.timezone.utc).date().isoformat()}\n"
         f"deplens: {deplens.__version__}\n"
         f"repos: {json.dumps(args.repo)}\n"
         f"max_updates_per_repo: {args.max_updates}\n"

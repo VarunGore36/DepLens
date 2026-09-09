@@ -5,7 +5,12 @@ from deplens.analysis.imports import (
     parse_imports_file,
     parse_imports_text,
 )
-from deplens.analysis.linking import ImportLink, affected_imports, is_stdlib, link_imports
+from deplens.analysis.linking import (
+    ImportLink,
+    affected_imports,
+    is_stdlib,
+    link_imports,
+)
 from deplens.analysis.usage import (
     ParsedUsage,
     UsageRecord,

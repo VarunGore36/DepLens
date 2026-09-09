@@ -33,6 +33,7 @@ def _run_git(repo: str | Path, *args: str) -> str:
         ["git", "-C", str(repo), *args],
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         raise ValueError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
@@ -74,6 +75,7 @@ def show_file(repo: str | Path, rev: str, path: str) -> str | None:
         ["git", "-C", str(repo), "show", f"{rev}:{path}"],
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         return None
@@ -97,7 +99,15 @@ def parse_side(filename: str, text: str, source: str) -> dict[str, str] | None:
         return None
     grouped: dict[str, str] = {}
     for dep_name, specs in parsed.by_name().items():
-        grouped[dep_name] = "|".join(sorted(s.constraint for s in specs))
+        parts = set()
+        for spec in specs:
+            part = spec.constraint
+            if spec.extras:
+                part += f"[{','.join(spec.extras)}]"
+            if spec.marker:
+                part += f"; {spec.marker}"
+            parts.add(part)
+        grouped[dep_name] = "|".join(sorted(parts))
     return grouped
 
 

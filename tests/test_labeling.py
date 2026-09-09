@@ -10,6 +10,7 @@ def _git(repo, *args):
         ["git", "-c", "user.email=t@t", "-c", "user.name=t", "-C", str(repo), *args],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 0, result.stderr
 
