@@ -249,7 +249,7 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 - [x] Repository scaffold (docs, `src/deplens/*`, `experiments/`, `datasets/`, `tests/`, `scripts/`)
 - [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
 - [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
-- [ ] Phase 3: dependency update dataset — in progress (git-history update detection with per-package old/new constraints; CI/test outcome labeling pending)
+- [ ] Phase 3: dependency update dataset — in progress (git-history update detection with per-package old/new constraints, heuristic revert/fix-commit labeling; CI/test outcome labeling pending)
 - [ ] Phase 4: baselines — in progress (major-version, direct-dependency, API-change, depth heuristics over UpdateCase)
 - [ ] Phase 5: evaluation — in progress (binary metrics + Brier score; temporal splits and ablations pending)
 - [ ] Phases 6+: advanced methods, developer tool — not started
