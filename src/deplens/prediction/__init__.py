@@ -1,1 +1,25 @@
-"""Impact estimation and prediction baselines (later ML/LLM). Status: planned (Phase 4+)."""
+from deplens.prediction.baselines import (
+    BASELINES,
+    Prediction,
+    UpdateCase,
+    api_change_heuristic,
+    coerce_version,
+    depth_heuristic,
+    direct_dependency_heuristic,
+    major_version_heuristic,
+    run_baselines,
+    semver_change,
+)
+
+__all__ = [
+    "BASELINES",
+    "Prediction",
+    "UpdateCase",
+    "api_change_heuristic",
+    "coerce_version",
+    "depth_heuristic",
+    "direct_dependency_heuristic",
+    "major_version_heuristic",
+    "run_baselines",
+    "semver_change",
+]

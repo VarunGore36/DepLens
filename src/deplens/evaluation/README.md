@@ -1,5 +1,3 @@
-# `evaluation` — Status: `planned` (Phase 5)
+# `evaluation` — Status: `in progress` (Phase 5)
 
-Metrics: precision, recall, F1, false-positive/negative rates, calibration. Temporal splits, ablations, per-stratum reporting.
-
-Not yet implemented. See `docs/methodology.md`.
+`metrics.py` provides binary classification metrics (precision, recall, F1, FP/FN rates, accuracy) and Brier score for calibration. Temporal splits, ablations, per-stratum reporting — `planned` per `docs/methodology.md`.

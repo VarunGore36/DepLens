@@ -1,5 +1,3 @@
-# `prediction` — Status: `planned` (Phase 4+)
+# `prediction` — Status: `in progress` (Phase 4)
 
-Phase 4 baselines (major-version, direct-dependency, API-change, depth heuristics), later graph/ML/LLM methods (Phase 6, `experimental`).
-
-No predictor implemented yet. Baselines must come first per `docs/methodology.md`.
+`baselines.py` implements the four Phase 4 heuristics over `UpdateCase` (major-version, direct-dependency, API-change, dependency-depth) with `run_baselines` for joint scoring. Graph/ML/LLM methods (Phase 6) — `experimental / planned`.

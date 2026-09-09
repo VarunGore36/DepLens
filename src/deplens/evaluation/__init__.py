@@ -1,1 +1,3 @@
-"""Evaluation metrics: precision, recall, F1, FP/FN rates, calibration. Status: planned (Phase 5)."""
+from deplens.evaluation.metrics import BinaryMetrics, brier_score, compute_binary_metrics
+
+__all__ = ["BinaryMetrics", "brier_score", "compute_binary_metrics"]
