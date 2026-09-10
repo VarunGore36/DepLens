@@ -247,7 +247,8 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 
 - [x] Project framing, research questions, methodology, roadmap
 - [x] First real-data smoke run — 40 updates across `requests`/`httpx` with parent-commit features and weak labels (`experiments/results/2026-09-09-first-run/`); re-ran after fixing the duplicate-line phantom-update bug, 1 weak positive; numbers are pipeline validation, not evidence
-- [x] Lint-clean (`ruff check`), 79 tests green, repo CI (pytest + ruff via GitHub Actions)
+- [x] First test-grounded run — 15 records from DepLens's own history (`experiments/results/2026-09-10-test-grounded/`); 1 decidable passing case, 12 pre-suite parents (`no-tests`), 2 parentless root records; confirms the machinery works but yields no evaluation signal yet
+- [x] Lint-clean (`ruff check`), 80 tests green, repo CI (pytest + ruff via GitHub Actions)
 - [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
 - [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
 - [ ] Phase 3: dependency update dataset — in progress (git-history update detection, heuristic revert/fix-commit labeling, worktree test-outcome labeling; curated real-data dataset pending)

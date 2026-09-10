@@ -62,3 +62,11 @@ def test_label_test_outcomes(break_repo):
 def test_label_test_outcomes_limit(break_repo):
     records = detect_updates(break_repo)
     assert [o.label for o in label_test_outcomes(break_repo, records, PYTEST, timeout=120, limit=0)] == []
+
+
+def test_undecidable_codes_yield_no_tests(break_repo):
+    records = detect_updates(break_repo)
+    updates = [r for r in records if r.change == "updated"]
+    exit5 = [sys.executable, "-c", "import sys; sys.exit(5)"]
+    outcomes = label_test_outcomes(break_repo, updates, exit5, timeout=120, undecidable_codes=(5,))
+    assert {o.label for o in outcomes} == {"no-tests"}

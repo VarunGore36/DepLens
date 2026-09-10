@@ -1,6 +1,7 @@
 from deplens.updates.detection import (
     UpdateRecord,
     detect_updates,
+    export_tree,
     files_changed,
     is_dep_file,
     list_commits,
@@ -21,6 +22,7 @@ __all__ = [
     "UpdateLabel",
     "UpdateRecord",
     "detect_updates",
+    "export_tree",
     "files_changed",
     "is_dep_file",
     "label_reverts",

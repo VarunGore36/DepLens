@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import subprocess
+import tarfile
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -152,3 +154,19 @@ def detect_updates(repo: str | Path, max_count: int | None = None) -> list[Updat
 def updates_for_package(records: list[UpdateRecord], package: str) -> list[UpdateRecord]:
     key = canonicalize_name(package)
     return [r for r in records if r.package == key]
+
+
+def export_tree(repo: str | Path, commit: str, dest: str | Path) -> bool:
+    archive = subprocess.run(
+        ["git", "-C", str(repo), "archive", commit],
+        capture_output=True,
+        check=False,
+    )
+    if archive.returncode != 0:
+        return False
+    with tempfile.NamedTemporaryFile(suffix=".tar") as tmp:
+        tmp.write(archive.stdout)
+        tmp.flush()
+        with tarfile.open(tmp.name) as tar:
+            tar.extractall(dest, filter="data")
+    return True

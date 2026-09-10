@@ -4,8 +4,6 @@ import argparse
 import dataclasses
 import datetime
 import json
-import subprocess
-import tarfile
 import tempfile
 from pathlib import Path
 
@@ -14,25 +12,9 @@ from deplens.evaluation import ablate, score_rules
 from deplens.graph import DependencyGraph
 from deplens.prediction import build_case, run_baselines
 from deplens.project import analyze_project
-from deplens.updates import detect_updates, label_updates
+from deplens.updates import detect_updates, export_tree, label_updates
 
 WEAK_POSITIVE = ("reverted", "fix-suspect")
-
-
-def export_parent(repo: str, commit: str, dest: Path) -> bool:
-    archive = subprocess.run(
-        ["git", "-C", repo, "archive", commit],
-        capture_output=True,
-        check=False,
-    )
-    if archive.returncode != 0:
-        return False
-    with tempfile.NamedTemporaryFile(suffix=".tar") as tmp:
-        tmp.write(archive.stdout)
-        tmp.flush()
-        with tarfile.open(tmp.name) as tar:
-            tar.extractall(dest, filter="data")
-    return True
 
 
 def run_repo(repo: str, max_updates: int) -> dict:
@@ -43,7 +25,7 @@ def run_repo(repo: str, max_updates: int) -> dict:
     for record, label in zip(records, labels):
         weak = label.label in WEAK_POSITIVE
         with tempfile.TemporaryDirectory(prefix="deplens-") as tmp:
-            if record.parent and export_parent(repo, record.parent, Path(tmp)):
+            if record.parent and export_tree(repo, record.parent, Path(tmp)):
                 analysis = analyze_project(tmp, include_objects=True)
                 objects = analysis["objects"]
                 case = build_case(
