@@ -14,7 +14,12 @@ from deplens.evaluation import ablate, score_rules
 from deplens.graph import DependencyGraph
 from deplens.prediction import build_case, run_baselines
 from deplens.project import analyze_project
-from deplens.updates import detect_updates, export_tree, label_test_outcomes
+from deplens.updates import (
+    detect_updates,
+    export_tree,
+    label_test_outcomes,
+    label_test_outcomes_isolated,
+)
 
 DECIDABLE = {"breaks-tests": True, "passes": False}
 
@@ -27,9 +32,11 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--cmd", nargs="*", default=None)
     parser.add_argument("--prepend-src", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--isolate", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--install-timeout", type=int, default=600)
     args = parser.parse_args()
     cmd = args.cmd or [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
-    if args.cmd is None:
+    if args.cmd is None and not args.isolate:
         probe = subprocess.run(
             [sys.executable, "-m", "pytest", "--version"],
             capture_output=True,
@@ -49,10 +56,16 @@ def main() -> int:
     distribution: dict = {}
     for repo in args.repo:
         records = detect_updates(repo)
-        outcomes = label_test_outcomes(
-            repo, records, cmd, args.timeout, limit=args.limit, prepend_src=args.prepend_src,
-            undecidable_codes=(5,),
-        )
+        if args.isolate:
+            outcomes = label_test_outcomes_isolated(
+                repo, records, ["-m", "pytest", "-q", "-p", "no:cacheprovider"],
+                args.timeout, args.install_timeout, limit=args.limit, undecidable_codes=(5,),
+            )
+        else:
+            outcomes = label_test_outcomes(
+                repo, records, cmd, args.timeout, limit=args.limit, prepend_src=args.prepend_src,
+                undecidable_codes=(5,),
+            )
         for record, outcome in zip(records, outcomes):
             distribution[outcome.label] = distribution.get(outcome.label, 0) + 1
             if outcome.label not in DECIDABLE:
@@ -112,6 +125,7 @@ def main() -> int:
         f"repos: {json.dumps(args.repo)}\n"
         f"cmd: {json.dumps(cmd)}\n"
         f"timeout: {args.timeout}\n"
+        f"isolate: {args.isolate}\n"
         f"labels: test-grounded (breaks-tests -> true, passes -> false; others dropped)\n"
     )
     table = "".join(

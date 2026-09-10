@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -68,6 +69,41 @@ def _remove_worktree(repo: str | Path, dest: str) -> None:
     )
 
 
+def _derive_label(parent_passed: bool, commit_passed: bool) -> str:
+    if parent_passed and not commit_passed:
+        return "breaks-tests"
+    if not parent_passed:
+        return "already-failing"
+    return "passes"
+
+
+def create_venv(dest: str | Path, python: str | None = None, timeout: int = 300) -> CommandResult:
+    target = Path(dest)
+    completed = run_command(
+        target.parent, [python or sys.executable, "-m", "venv", str(target)], timeout
+    )
+    if not completed.passed:
+        return CommandResult(None, completed.returncode, completed.output)
+    candidate = target / ("Scripts" if os.name == "nt" else "bin") / "python"
+    if not candidate.exists():
+        return CommandResult(None, 1, f"venv python missing at {candidate}")
+    return CommandResult(True, 0, str(candidate))
+
+
+def install_worktree_deps(venv_python: str, worktree: str | Path, timeout: int = 600) -> CommandResult:
+    base = Path(worktree)
+    steps = []
+    if (base / "requirements.txt").exists():
+        steps.append([venv_python, "-m", "pip", "install", "--quiet", "-r", "requirements.txt"])
+    if (base / "pyproject.toml").exists() or (base / "setup.py").exists() or (base / "setup.cfg").exists():
+        steps.append([venv_python, "-m", "pip", "install", "--quiet", "-e", "."])
+    for step in steps:
+        result = run_command(base, step, timeout)
+        if not result.passed:
+            return result
+    return CommandResult(True, 0, "")
+
+
 def outcome_for_commit(
     repo: str | Path,
     commit: str,
@@ -112,24 +148,82 @@ def label_test_outcomes(
             outcomes.append(TestOutcome(record, None, None, "error"))
             continue
         parent = outcome_for_commit(repo, record.parent, cmd, timeout, setup, env, prepend_src)
-        if parent.passed is None:
-            outcomes.append(TestOutcome(record, None, None, "timeout" if parent.returncode is None else "error"))
-            continue
-        if parent.returncode in undecidable_codes:
-            outcomes.append(TestOutcome(record, None, None, "no-tests"))
+        if parent.passed is None or parent.returncode in undecidable_codes:
+            outcomes.append(_settle(record, parent, CommandResult(None, None, ""), undecidable_codes))
             continue
         commit = outcome_for_commit(repo, record.commit, cmd, timeout, setup, env, prepend_src)
-        if commit.passed is None:
-            outcomes.append(TestOutcome(record, parent.passed, None, "timeout" if commit.returncode is None else "error"))
+        outcomes.append(_settle(record, parent, commit, undecidable_codes))
+    return outcomes
+
+
+def outcome_for_commit_isolated(
+    repo: str | Path,
+    commit: str,
+    test_args: list[str],
+    timeout: int = 300,
+    install_timeout: int = 600,
+    python: str | None = None,
+) -> CommandResult:
+    with tempfile.TemporaryDirectory(prefix="deplens-iso-") as base:
+        worktree = str(Path(base) / "wt")
+        if not _worktree(repo, commit, worktree):
+            return CommandResult(None, None, f"worktree setup failed for {commit}")
+        try:
+            venv = create_venv(str(Path(base) / "venv"), python, timeout)
+            if not venv.passed:
+                return CommandResult(None, venv.returncode, venv.output)
+            venv_python = venv.output
+            installed = install_worktree_deps(venv_python, worktree, install_timeout)
+            if not installed.passed:
+                return CommandResult(None, installed.returncode, installed.output)
+            if test_args[:2] == ["-m", "pytest"]:
+                runner = run_command(
+                    worktree, [venv_python, "-m", "pip", "install", "--quiet", "pytest"], install_timeout
+                )
+                if not runner.passed:
+                    return CommandResult(None, runner.returncode, runner.output)
+            src = Path(worktree) / "src"
+            env = {"PYTHONPATH": str(src)} if src.is_dir() else None
+            return run_command(worktree, [venv_python, *test_args], timeout, env)
+        finally:
+            _remove_worktree(repo, worktree)
+
+
+def _settle(
+    record: UpdateRecord,
+    parent: CommandResult,
+    commit: CommandResult,
+    undecidable_codes: tuple[int, ...],
+) -> TestOutcome:
+    if parent.passed is None:
+        return TestOutcome(record, None, None, "timeout" if parent.returncode is None else "error")
+    if parent.returncode in undecidable_codes:
+        return TestOutcome(record, None, None, "no-tests")
+    if commit.passed is None:
+        return TestOutcome(record, parent.passed, None, "timeout" if commit.returncode is None else "error")
+    if commit.returncode in undecidable_codes:
+        return TestOutcome(record, parent.passed, None, "no-tests")
+    return TestOutcome(record, parent.passed, commit.passed, _derive_label(parent.passed, commit.passed))
+
+
+def label_test_outcomes_isolated(
+    repo: str | Path,
+    records: list[UpdateRecord],
+    test_args: list[str],
+    timeout: int = 300,
+    install_timeout: int = 600,
+    limit: int | None = None,
+    undecidable_codes: tuple[int, ...] = (),
+) -> list[TestOutcome]:
+    outcomes = []
+    for record in records[:limit] if limit is not None else records:
+        if not record.parent:
+            outcomes.append(TestOutcome(record, None, None, "error"))
             continue
-        if commit.returncode in undecidable_codes:
-            outcomes.append(TestOutcome(record, parent.passed, None, "no-tests"))
+        parent = outcome_for_commit_isolated(repo, record.parent, test_args, timeout, install_timeout)
+        if parent.passed is None or parent.returncode in undecidable_codes:
+            outcomes.append(_settle(record, parent, CommandResult(None, None, ""), undecidable_codes))
             continue
-        if parent.passed and not commit.passed:
-            label = "breaks-tests"
-        elif not parent.passed:
-            label = "already-failing"
-        else:
-            label = "passes"
-        outcomes.append(TestOutcome(record, parent.passed, commit.passed, label))
+        commit = outcome_for_commit_isolated(repo, record.commit, test_args, timeout, install_timeout)
+        outcomes.append(_settle(record, parent, commit, undecidable_codes))
     return outcomes

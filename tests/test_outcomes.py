@@ -1,9 +1,17 @@
 import subprocess
 import sys
+import tempfile
 
 import pytest
 
-from deplens.updates import detect_updates, label_test_outcomes, run_command
+from deplens.updates import (
+    create_venv,
+    detect_updates,
+    install_worktree_deps,
+    label_test_outcomes,
+    label_test_outcomes_isolated,
+    run_command,
+)
 
 PYTEST = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
 
@@ -70,3 +78,44 @@ def test_undecidable_codes_yield_no_tests(break_repo):
     exit5 = [sys.executable, "-c", "import sys; sys.exit(5)"]
     outcomes = label_test_outcomes(break_repo, updates, exit5, timeout=120, undecidable_codes=(5,))
     assert {o.label for o in outcomes} == {"no-tests"}
+
+
+@pytest.fixture
+def iso_repo(tmp_path):
+    _git(tmp_path, "init", "-q")
+    (tmp_path / "requirements.txt").write_text("requests==2.28.0\n")
+    (tmp_path / "test_x.py").write_text("def test_a():\n    assert True\n")
+    _git(tmp_path, "add", "requirements.txt", "test_x.py")
+    _git(tmp_path, "commit", "-qm", "initial")
+    (tmp_path / "requirements.txt").write_text("requests==2.31.0\n")
+    (tmp_path / "test_x.py").write_text("def test_a():\n    assert False\n")
+    _git(tmp_path, "add", "requirements.txt", "test_x.py")
+    _git(tmp_path, "commit", "-qm", "bump dep, break test")
+    return tmp_path
+
+
+def test_create_venv_has_working_python(tmp_path):
+    with tempfile.TemporaryDirectory() as base:
+        result = create_venv(f"{base}/venv", sys.executable, 120)
+        assert result.passed is True
+        assert run_command(base, [result.output, "-c", "pass"], 60).passed is True
+
+
+def test_install_worktree_deps_empty_requirements(tmp_path):
+    (tmp_path / "requirements.txt").write_text("")
+    with tempfile.TemporaryDirectory() as base:
+        venv = create_venv(f"{base}/venv", sys.executable, 120)
+        assert venv.passed is True
+        installed = install_worktree_deps(venv.output, tmp_path, 180)
+        assert installed.passed is True
+
+
+def test_label_test_outcomes_isolated(iso_repo):
+    records = [r for r in detect_updates(iso_repo) if r.change == "updated"]
+    assert len(records) == 1
+    outcomes = label_test_outcomes_isolated(
+        iso_repo, records, ["-m", "pytest", "-q", "-p", "no:cacheprovider"], timeout=180
+    )
+    assert len(outcomes) == 1
+    assert outcomes[0].parent_passed is True and outcomes[0].commit_passed is False
+    assert outcomes[0].label == "breaks-tests"
