@@ -7,9 +7,15 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
 from deplens.updates.detection import UpdateRecord
 
 OUTPUT_LIMIT = 4000
+TEST_EXTRA_NAMES = ("test", "tests", "testing", "dev")
 
 
 @dataclass(frozen=True)
@@ -90,13 +96,30 @@ def create_venv(dest: str | Path, python: str | None = None, timeout: int = 300)
     return CommandResult(True, 0, str(candidate))
 
 
+def _test_extra(base: Path) -> str | None:
+    pyproject = base / "pyproject.toml"
+    if not pyproject.exists():
+        return None
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    groups = (data.get("project", {}) or {}).get("optional-dependencies", {}) or {}
+    for name in TEST_EXTRA_NAMES:
+        if name in groups:
+            return name
+    return None
+
+
 def install_worktree_deps(venv_python: str, worktree: str | Path, timeout: int = 600) -> CommandResult:
     base = Path(worktree)
     steps = []
     if (base / "requirements.txt").exists():
         steps.append([venv_python, "-m", "pip", "install", "--quiet", "-r", "requirements.txt"])
     if (base / "pyproject.toml").exists() or (base / "setup.py").exists() or (base / "setup.cfg").exists():
-        steps.append([venv_python, "-m", "pip", "install", "--quiet", "-e", "."])
+        extra = _test_extra(base)
+        target = f".[{extra}]" if extra else "."
+        steps.append([venv_python, "-m", "pip", "install", "--quiet", "-e", target])
     for step in steps:
         result = run_command(base, step, timeout)
         if not result.passed:

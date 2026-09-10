@@ -30,7 +30,7 @@ Status legend: `implemented` / `in progress` / `planned` / `experimental` / `hyp
 - [x] Identify historical updates from git history (deduplicated, marker/extras-sensitive diff)
 - [x] Heuristic labels (reverts, fix-commits)
 - [x] Worktree test-outcome labeling (`breaks-tests` / `passes` / `already-failing` / `no-tests`)
-- [x] Isolated per-commit venvs with era installs (`label_test_outcomes_isolated`)
+- [x] Isolated per-commit venvs with era installs incl. test extras (`label_test_outcomes_isolated`)
 - [ ] Curated real-data dataset in `datasets/`
 - Module: `src/deplens/updates/` + `datasets/`
 

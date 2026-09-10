@@ -119,3 +119,49 @@ def test_label_test_outcomes_isolated(iso_repo):
     assert len(outcomes) == 1
     assert outcomes[0].parent_passed is True and outcomes[0].commit_passed is False
     assert outcomes[0].label == "breaks-tests"
+
+
+PYPROJECT_V1 = """
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iso-pkg"
+version = "0.1.0"
+
+[project.optional-dependencies]
+test = ["packaging>=24"]
+"""
+
+PYPROJECT_V2 = PYPROJECT_V1.replace('"packaging>=24"', '"packaging>=26"')
+
+
+@pytest.fixture
+def extra_repo(tmp_path):
+    (tmp_path / "src" / "iso_pkg").mkdir(parents=True)
+    (tmp_path / "src" / "iso_pkg" / "__init__.py").write_text("")
+    (tmp_path / "tests").mkdir()
+    _git(tmp_path, "init", "-q")
+    (tmp_path / "pyproject.toml").write_text(PYPROJECT_V1)
+    (tmp_path / "tests" / "test_x.py").write_text(
+        "import packaging\n\ndef test_a():\n    assert packaging.__version__\n"
+    )
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "initial")
+    (tmp_path / "pyproject.toml").write_text(PYPROJECT_V2)
+    (tmp_path / "tests" / "test_x.py").write_text(
+        "import packaging\n\ndef test_a():\n    assert False\n"
+    )
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "bump test extra, break test")
+    return tmp_path
+
+
+def test_isolated_installs_test_extras(extra_repo):
+    records = [r for r in detect_updates(extra_repo) if r.change == "updated"]
+    assert len(records) == 1
+    outcomes = label_test_outcomes_isolated(
+        extra_repo, records, ["-m", "pytest", "-q", "-p", "no:cacheprovider"], timeout=300
+    )
+    assert outcomes[0].label == "breaks-tests"
