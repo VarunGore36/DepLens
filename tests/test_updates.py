@@ -34,6 +34,8 @@ def repo(tmp_path):
 def test_is_dep_file():
     assert is_dep_file("requirements.txt")
     assert is_dep_file("subdir/requirements-dev.txt")
+    assert is_dep_file("dev-requirements.txt")
+    assert is_dep_file("test-requirements.in")
     assert is_dep_file("pyproject.toml")
     assert is_dep_file("poetry.lock")
     assert not is_dep_file("app.py")

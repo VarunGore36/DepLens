@@ -30,6 +30,7 @@ def main() -> int:
     parser.add_argument("--out", required=True)
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--file", action="append", default=None)
     parser.add_argument("--cmd", nargs="*", default=None)
     parser.add_argument("--prepend-src", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--isolate", action=argparse.BooleanOptionalAction, default=False)
@@ -56,6 +57,8 @@ def main() -> int:
     distribution: dict = {}
     for repo in args.repo:
         records = detect_updates(repo)
+        if args.file:
+            records = [r for r in records if any(f in r.file for f in args.file)]
         if args.isolate:
             outcomes = label_test_outcomes_isolated(
                 repo, records, ["-m", "pytest", "-q", "-p", "no:cacheprovider"],

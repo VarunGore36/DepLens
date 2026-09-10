@@ -46,7 +46,7 @@ def is_dep_file(path: str) -> bool:
     name = Path(path).name
     if name in ("pyproject.toml", "poetry.lock", "uv.lock", "Pipfile.lock"):
         return True
-    return name.startswith("requirements") and Path(name).suffix in (".txt", ".in", ".lock")
+    return "requirements" in Path(name).stem and Path(name).suffix in (".txt", ".in", ".lock")
 
 
 def list_commits(repo: str | Path, max_count: int | None = None) -> list[tuple[str, str, str, str]]:

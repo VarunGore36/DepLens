@@ -114,8 +114,8 @@ def _test_extra(base: Path) -> str | None:
 def install_worktree_deps(venv_python: str, worktree: str | Path, timeout: int = 600) -> CommandResult:
     base = Path(worktree)
     steps = []
-    if (base / "requirements.txt").exists():
-        steps.append([venv_python, "-m", "pip", "install", "--quiet", "-r", "requirements.txt"])
+    for reqfile in sorted(base.glob("*requirements*.txt")):
+        steps.append([venv_python, "-m", "pip", "install", "--quiet", "-r", reqfile.name])
     if (base / "pyproject.toml").exists() or (base / "setup.py").exists() or (base / "setup.cfg").exists():
         extra = _test_extra(base)
         target = f".[{extra}]" if extra else "."

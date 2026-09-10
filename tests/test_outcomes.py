@@ -110,6 +110,18 @@ def test_install_worktree_deps_empty_requirements(tmp_path):
         assert installed.passed is True
 
 
+def test_install_worktree_deps_dev_requirements(tmp_path):
+    (tmp_path / "dev-requirements.txt").write_text("packaging>=24\n")
+    with tempfile.TemporaryDirectory() as base:
+        venv = create_venv(f"{base}/venv", sys.executable, 120)
+        assert venv.passed is True
+        assert install_worktree_deps(venv.output, tmp_path, 300).passed is True
+        probed = run_command(
+            base, [venv.output, "-c", "import packaging"], 60
+        )
+        assert probed.passed is True
+
+
 def test_label_test_outcomes_isolated(iso_repo):
     records = [r for r in detect_updates(iso_repo) if r.change == "updated"]
     assert len(records) == 1
