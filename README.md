@@ -247,10 +247,10 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 
 - [x] Project framing, research questions, methodology, roadmap
 - [x] First real-data smoke run — 40 updates across `requests`/`httpx` with parent-commit features and weak labels (`experiments/results/2026-09-09-first-run/`); re-ran after fixing the duplicate-line phantom-update bug, 1 weak positive; numbers are pipeline validation, not evidence
-- [x] Lint-clean (`ruff check`), 75 tests green, repo CI (pytest + ruff via GitHub Actions)
+- [x] Lint-clean (`ruff check`), 79 tests green, repo CI (pytest + ruff via GitHub Actions)
 - [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
 - [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
-- [ ] Phase 3: dependency update dataset — in progress (git-history update detection with per-package old/new constraints, heuristic revert/fix-commit labeling; CI/test outcome labeling pending)
+- [ ] Phase 3: dependency update dataset — in progress (git-history update detection, heuristic revert/fix-commit labeling, worktree test-outcome labeling; curated real-data dataset pending)
 - [ ] Phase 4: baselines — in progress (four roadmap heuristics plus a code-usage rule for RQ4 ablation)
 - [ ] Phase 5: evaluation — in progress (binary metrics, Brier score, per-rule scoring, metadata-vs-usage ablation, temporal splits, per-stratum reporting; published real-data results pending)
 - [ ] Phase 6: advanced methods — initial implementation, unevaluated (graph features, grid-fit hybrid model, experimental LLM-adapter seam; no ML/embeddings evaluation on real data yet)

@@ -29,7 +29,8 @@ Status legend: `implemented` / `in progress` / `planned` / `experimental` / `hyp
 
 - [x] Identify historical updates from git history (deduplicated, marker/extras-sensitive diff)
 - [x] Heuristic labels (reverts, fix-commits)
-- [ ] CI/test outcome labeling, curated dataset in `datasets/`
+- [x] Worktree test-outcome labeling (`breaks-tests` / `passes` / `already-failing`)
+- [ ] Curated real-data dataset in `datasets/`
 - Module: `src/deplens/updates/` + `datasets/`
 
 ## Phase 4 — Baselines (`in progress`)
