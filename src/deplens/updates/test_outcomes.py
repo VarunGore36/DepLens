@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -66,13 +67,25 @@ def _worktree(repo: str | Path, commit: str, dest: str) -> bool:
     return result.returncode == 0
 
 
-def _remove_worktree(repo: str | Path, dest: str) -> None:
+def _remove_worktree(repo: str | Path, dest: str) -> bool:
     subprocess.run(
         ["git", "-C", str(repo), "worktree", "remove", "--force", dest],
         capture_output=True,
         text=True,
         check=False,
     )
+    if Path(dest).exists():
+        shutil.rmtree(dest, ignore_errors=True)
+        subprocess.run(
+            ["git", "-C", str(repo), "worktree", "prune"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    if Path(dest).exists():
+        print(f"warning: worktree cleanup failed for {dest}", file=sys.stderr)
+        return False
+    return True
 
 
 def _derive_label(parent_passed: bool, commit_passed: bool) -> str:
@@ -125,6 +138,15 @@ def install_worktree_deps(venv_python: str, worktree: str | Path, timeout: int =
         if not result.passed:
             return result
     return CommandResult(True, 0, "")
+
+
+def ensure_pytest_runner(venv_python: str, worktree: str | Path, timeout: int = 600) -> CommandResult:
+    probe = run_command(worktree, [venv_python, "-m", "pytest", "--version"], timeout)
+    if probe.passed:
+        return CommandResult(True, 0, "")
+    return run_command(
+        worktree, [venv_python, "-m", "pip", "install", "--quiet", "pytest"], timeout
+    )
 
 
 def outcome_for_commit(
@@ -200,9 +222,7 @@ def outcome_for_commit_isolated(
             if not installed.passed:
                 return CommandResult(None, installed.returncode, installed.output)
             if test_args[:2] == ["-m", "pytest"]:
-                runner = run_command(
-                    worktree, [venv_python, "-m", "pip", "install", "--quiet", "pytest"], install_timeout
-                )
+                runner = ensure_pytest_runner(venv_python, worktree, install_timeout)
                 if not runner.passed:
                     return CommandResult(None, runner.returncode, runner.output)
             src = Path(worktree) / "src"

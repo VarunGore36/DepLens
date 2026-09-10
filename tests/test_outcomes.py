@@ -7,6 +7,7 @@ import pytest
 from deplens.updates import (
     create_venv,
     detect_updates,
+    ensure_pytest_runner,
     install_worktree_deps,
     label_test_outcomes,
     label_test_outcomes_isolated,
@@ -177,3 +178,13 @@ def test_isolated_installs_test_extras(extra_repo):
         extra_repo, records, ["-m", "pytest", "-q", "-p", "no:cacheprovider"], timeout=300
     )
     assert outcomes[0].label == "breaks-tests"
+
+
+def test_ensure_pytest_runner_installs_only_when_missing(tmp_path):
+    with tempfile.TemporaryDirectory() as base:
+        venv = create_venv(f"{base}/venv", sys.executable, 120)
+        assert venv.passed is True
+        first = ensure_pytest_runner(venv.output, base, 300)
+        assert first.passed is True
+        second = ensure_pytest_runner(venv.output, base, 60)
+        assert second.passed is True and second.output == ""

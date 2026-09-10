@@ -35,8 +35,11 @@ def main() -> int:
     parser.add_argument("--prepend-src", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--isolate", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--install-timeout", type=int, default=600)
+    parser.add_argument("--deselect", action="append", default=[])
     args = parser.parse_args()
-    cmd = args.cmd or [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+    deselect_args = [flag for node in args.deselect for flag in ("--deselect", node)]
+    cmd = (args.cmd or [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]) + deselect_args
+    isolated_args = ["-m", "pytest", "-q", "-p", "no:cacheprovider", *deselect_args]
     if args.cmd is None and not args.isolate:
         probe = subprocess.run(
             [sys.executable, "-m", "pytest", "--version"],
@@ -61,7 +64,7 @@ def main() -> int:
             records = [r for r in records if any(f in r.file for f in args.file)]
         if args.isolate:
             outcomes = label_test_outcomes_isolated(
-                repo, records, ["-m", "pytest", "-q", "-p", "no:cacheprovider"],
+                repo, records, isolated_args,
                 args.timeout, args.install_timeout, limit=args.limit, undecidable_codes=(5,),
             )
         else:
@@ -129,6 +132,7 @@ def main() -> int:
         f"cmd: {json.dumps(cmd)}\n"
         f"timeout: {args.timeout}\n"
         f"isolate: {args.isolate}\n"
+        f"deselect: {json.dumps(args.deselect)}\n"
         f"labels: test-grounded (breaks-tests -> true, passes -> false; others dropped)\n"
     )
     table = "".join(

@@ -248,8 +248,9 @@ See `experiments/baselines/` for future baseline definitions and `experiments/re
 - [x] Project framing, research questions, methodology, roadmap
 - [x] First real-data smoke run — 40 updates across `requests`/`httpx` with parent-commit features and weak labels (`experiments/results/2026-09-09-first-run/`); re-ran after fixing the duplicate-line phantom-update bug, 1 weak positive; numbers are pipeline validation, not evidence
 - [x] First test-grounded run — 15 records from DepLens's own history (`experiments/results/2026-09-10-test-grounded/`); 1 decidable passing case, 12 pre-suite parents (`no-tests`), 2 parentless root records; confirms the machinery works but yields no evaluation signal yet
-- [x] Isolated test-outcome labeling — fresh per-commit venvs with era installs plus declared test extras, trial-validated on a real `httpx` update (trio bump; parent already failing on undeclared `anyio` dep, honestly excluded)
-- [x] Lint-clean (`ruff check`), 84 tests green, repo CI (pytest + ruff via GitHub Actions)
+- [x] Isolated test-outcome labeling — fresh per-commit venvs with era installs plus declared test extras, era pytest respected; trials on `httpx`/`urllib3` prove the machinery but yield no decidable cases yet (undeclared CI deps; transitive-drift breakage)
+- [x] Key methodology finding (proven, not assumed) — partial era pins do not reproduce era CI envs: unpinned transitive deps float to modern versions and break old suites (era Quart vs latest Flask). Full-closure eras (`uv.lock`) are the viable next target
+- [x] Lint-clean (`ruff check`), 85 tests green, repo CI (pytest + ruff via GitHub Actions)
 - [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
 - [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
 - [ ] Phase 3: dependency update dataset — in progress (git-history update detection, heuristic and worktree test-outcome labeling incl. isolated era installs; curated real-data dataset pending)
