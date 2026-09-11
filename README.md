@@ -18,7 +18,7 @@ DepLens treats this as an open research question, not a solved engineering probl
 
 ## 2. What Works Today vs What Does Not
 
-Implemented and tested (91 tests, `ruff check` clean, CI runs both):
+Implemented and tested (109 tests, `ruff check` clean, CI runs both):
 
 | Area | Status | Entry points |
 |---|---|---|
@@ -31,7 +31,7 @@ Implemented and tested (91 tests, `ruff check` clean, CI runs both):
 | Baselines (major-version, direct, API-change, depth, code-usage), hybrid model, LLM seam | `implemented` | `deplens.prediction` |
 | Impact reports (affected files/APIs, rule verdicts, risk score) | `implemented` | `deplens impact` |
 | Metrics (precision/recall/F1/FP/FN, ROC-AUC, Brier), per-rule scoring, ablation, temporal splits, strata | `implemented` | `deplens.evaluation` |
-| CLI (`analyze`, `impact`, `predict`, `updates`), JSON + markdown reports, GitHub workflow + PR comments | `implemented` | `deplens.cli` |
+| CLI (zero-friction `deplens`, `quick`/`full`, focused views, legacy commands kept), JSON + markdown reports, GitHub workflow + PR comments | `implemented` | `deplens.cli` |
 
 Not done / explicitly future:
 
@@ -50,18 +50,36 @@ Requires Python 3.10+ and `uv` (or `pip`).
 git clone <this-repo> && cd deplens
 uv sync  # or: pip install -e .
 
-# Project analysis (JSON default, --format markdown available)
-uv run deplens analyze /path/to/project
+cd my-project
+deplens                  # standard analysis of the current directory
+```
 
-# Impact report for one update in a project (files, APIs, verdicts, risk)
-uv run deplens impact /path/to/project --package requests --old "==2.28.0" --new "==2.31.0"
+That prints a dependency inventory, code-usage summary, recent updates with per-update
+impact lines, and a risk summary. For machine-readable output or a saved report:
 
-# Score one hypothetical update from raw signals
-uv run deplens predict --package requests --old 1.0.0 --new 2.0.0 --affected-imports 3
+```bash
+deplens --format json > report.json
+deplens /path/to/project --output report.md
+```
 
-# Labeled dependency-update history of a git checkout
-uv run deplens updates /path/to/git-repo
+Progressive workflows for advanced use:
 
+```bash
+deplens quick            # fast analysis only, no history mining
+deplens full             # exhaustive analysis with update impacts
+deplens dependencies .   # focused dependency inventory
+deplens usage .          # focused code-usage summary
+deplens impact . --package requests --old "==2.28.0" --new "==2.31.0"
+deplens predict --package requests --old 1.0.0 --new 2.0.0 --affected-imports 3
+deplens updates /path/to/git-repo   # labeled update history (needs a git checkout)
+deplens --help           # all workflows
+deplens --version
+```
+
+Exit codes: `0` success (including "no dependencies/updates found"), `2` for usage
+errors such as missing paths. `--format json` on the new commands is stable for scripts.
+
+```bash
 # Tests, lint, and the committed v0 experiment
 uv run --with pytest pytest -q
 uv run --with ruff ruff check src tests scripts
@@ -188,9 +206,10 @@ direct-dependency, API-change, dependency-depth, plus code-usage for ablations.
 
 Full breakdown: [`docs/roadmap.md`](docs/roadmap.md). Short version: Phases 0–2 engine,
 update detection with heuristic and test-grounded labels, baselines, evaluation toolkit,
-initial advanced methods, and initial tooling are built; large-scale labeled data, validated
-claims, and any ML/LLM evaluation are not. Phase 7 (developer tooling) stays gated on
-evidence that prediction is reliable enough to matter.
+initial advanced methods, and initial tooling (including zero-friction `deplens` default,
+`quick`/`full` modes, and back-compatible legacy commands) are built; large-scale labeled
+data, validated claims, and any ML/LLM evaluation are not. Phase 7 (developer tooling)
+stays gated on evidence that prediction is reliable enough to matter.
 
 ## 11. Contributing
 
