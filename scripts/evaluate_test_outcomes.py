@@ -38,8 +38,8 @@ def main() -> int:
     parser.add_argument("--deselect", action="append", default=[])
     args = parser.parse_args()
     deselect_args = [flag for node in args.deselect for flag in ("--deselect", node)]
-    cmd = (args.cmd or [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]) + deselect_args
-    isolated_args = ["-m", "pytest", "-q", "-p", "no:cacheprovider", *deselect_args]
+    cmd = (args.cmd or [sys.executable, "-m", "pytest", "-q"]) + deselect_args
+    isolated_args = ["-m", "pytest", "-q", *deselect_args]
     if args.cmd is None and not args.isolate:
         probe = subprocess.run(
             [sys.executable, "-m", "pytest", "--version"],

@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -6,15 +7,20 @@ import pytest
 
 from deplens.updates import (
     create_venv,
+    dependency_group_names,
     detect_updates,
     ensure_pytest_runner,
     install_worktree_deps,
     label_test_outcomes,
     label_test_outcomes_isolated,
     run_command,
+    uv_sync_command,
+    uv_venv_python,
 )
 
-PYTEST = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+needs_uv = pytest.mark.skipif(shutil.which("uv") is None, reason="uv binary required")
+
+PYTEST = [sys.executable, "-m", "pytest", "-q"]
 
 
 def _git(repo, *args):
@@ -127,7 +133,7 @@ def test_label_test_outcomes_isolated(iso_repo):
     records = [r for r in detect_updates(iso_repo) if r.change == "updated"]
     assert len(records) == 1
     outcomes = label_test_outcomes_isolated(
-        iso_repo, records, ["-m", "pytest", "-q", "-p", "no:cacheprovider"], timeout=180
+        iso_repo, records, ["-m", "pytest", "-q"], timeout=180
     )
     assert len(outcomes) == 1
     assert outcomes[0].parent_passed is True and outcomes[0].commit_passed is False
@@ -175,7 +181,7 @@ def test_isolated_installs_test_extras(extra_repo):
     records = [r for r in detect_updates(extra_repo) if r.change == "updated"]
     assert len(records) == 1
     outcomes = label_test_outcomes_isolated(
-        extra_repo, records, ["-m", "pytest", "-q", "-p", "no:cacheprovider"], timeout=300
+        extra_repo, records, ["-m", "pytest", "-q"], timeout=300
     )
     assert outcomes[0].label == "breaks-tests"
 
@@ -188,3 +194,55 @@ def test_ensure_pytest_runner_installs_only_when_missing(tmp_path):
         assert first.passed is True
         second = ensure_pytest_runner(venv.output, base, 60)
         assert second.passed is True and second.output == ""
+
+
+def test_dependency_group_names(tmp_path):
+    assert dependency_group_names(tmp_path) == []
+    (tmp_path / "pyproject.toml").write_text(
+        "[dependency-groups]\ntest = []\ndocs = []\n"
+    )
+    assert dependency_group_names(tmp_path) == ["docs", "test"]
+    (tmp_path / "pyproject.toml").write_text("not valid toml [[[\n")
+    assert dependency_group_names(tmp_path) == []
+
+
+def test_uv_sync_command_no_lock(tmp_path):
+    assert uv_sync_command(tmp_path) is None
+
+
+def test_uv_sync_command_missing_binary(tmp_path):
+    (tmp_path / "uv.lock").write_text("")
+    assert uv_sync_command(tmp_path, uv="no-such-binary-xyz") is None
+
+
+@needs_uv
+def test_uv_sync_command_groups(tmp_path):
+    (tmp_path / "uv.lock").write_text("")
+    (tmp_path / "pyproject.toml").write_text("[dependency-groups]\ntest = []\n")
+    assert uv_sync_command(tmp_path) == ["uv", "sync", "--locked", "--quiet", "--group", "test"]
+    assert uv_venv_python(tmp_path).parts[-3:] == (".venv", "bin", "python")
+
+
+@needs_uv
+def test_uv_sync_integration(tmp_path):
+    init = subprocess.run(
+        ["uv", "init", "-q", "--bare", "--name", "tiny", "--python", "3.12", "."],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert init.returncode == 0, init.stderr
+    add = subprocess.run(
+        ["uv", "add", "-q", "--dev", "pytest"],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert add.returncode == 0, add.stderr
+    assert uv_sync_command(tmp_path) is not None
+    synced = run_command(tmp_path, uv_sync_command(tmp_path), 300)
+    assert synced.passed is True, synced.output
+    probed = run_command(tmp_path, [str(uv_venv_python(tmp_path)), "-m", "pytest", "--version"], 60)
+    assert probed.passed is True

@@ -12,6 +12,7 @@ from deplens.updates.test_outcomes import (
     CommandResult,
     TestOutcome,
     create_venv,
+    dependency_group_names,
     ensure_pytest_runner,
     install_worktree_deps,
     label_test_outcomes,
@@ -19,6 +20,8 @@ from deplens.updates.test_outcomes import (
     outcome_for_commit,
     outcome_for_commit_isolated,
     run_command,
+    uv_sync_command,
+    uv_venv_python,
 )
 
 __all__ = [
@@ -27,6 +30,7 @@ __all__ = [
     "UpdateLabel",
     "UpdateRecord",
     "create_venv",
+    "dependency_group_names",
     "detect_updates",
     "ensure_pytest_runner",
     "export_tree",
@@ -42,4 +46,6 @@ __all__ = [
     "outcome_for_commit_isolated",
     "run_command",
     "updates_for_package",
+    "uv_sync_command",
+    "uv_venv_python",
 ]

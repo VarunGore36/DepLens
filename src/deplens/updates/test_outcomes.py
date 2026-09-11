@@ -124,6 +124,34 @@ def _test_extra(base: Path) -> str | None:
     return None
 
 
+def dependency_group_names(base: str | Path) -> list[str]:
+    pyproject = Path(base) / "pyproject.toml"
+    if not pyproject.exists():
+        return []
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    groups = data.get("dependency-groups", {}) or {}
+    return sorted(name for name in groups) if isinstance(groups, dict) else []
+
+
+def uv_sync_command(base: str | Path, uv: str = "uv") -> list[str] | None:
+    if not (Path(base) / "uv.lock").exists():
+        return None
+    if shutil.which(uv) is None:
+        return None
+    cmd = [uv, "sync", "--locked", "--quiet"]
+    for name in TEST_EXTRA_NAMES:
+        if name in dependency_group_names(base):
+            cmd += ["--group", name]
+    return cmd
+
+
+def uv_venv_python(base: str | Path) -> Path:
+    return Path(base) / ".venv" / ("Scripts" if os.name == "nt" else "bin") / "python"
+
+
 def install_worktree_deps(venv_python: str, worktree: str | Path, timeout: int = 600) -> CommandResult:
     base = Path(worktree)
     steps = []
@@ -214,13 +242,22 @@ def outcome_for_commit_isolated(
         if not _worktree(repo, commit, worktree):
             return CommandResult(None, None, f"worktree setup failed for {commit}")
         try:
-            venv = create_venv(str(Path(base) / "venv"), python, timeout)
-            if not venv.passed:
-                return CommandResult(None, venv.returncode, venv.output)
-            venv_python = venv.output
-            installed = install_worktree_deps(venv_python, worktree, install_timeout)
-            if not installed.passed:
-                return CommandResult(None, installed.returncode, installed.output)
+            uv_cmd = uv_sync_command(worktree)
+            if uv_cmd is not None:
+                synced = run_command(worktree, uv_cmd, install_timeout)
+                if not synced.passed:
+                    return CommandResult(None, synced.returncode, synced.output)
+                venv_python = str(uv_venv_python(worktree))
+                if not Path(venv_python).exists():
+                    return CommandResult(None, 1, "uv sync produced no .venv python")
+            else:
+                venv = create_venv(str(Path(base) / "venv"), python, timeout)
+                if not venv.passed:
+                    return CommandResult(None, venv.returncode, venv.output)
+                venv_python = venv.output
+                installed = install_worktree_deps(venv_python, worktree, install_timeout)
+                if not installed.passed:
+                    return CommandResult(None, installed.returncode, installed.output)
             if test_args[:2] == ["-m", "pytest"]:
                 runner = ensure_pytest_runner(venv_python, worktree, install_timeout)
                 if not runner.passed:
