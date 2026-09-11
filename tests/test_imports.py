@@ -45,3 +45,17 @@ def test_linking_exact_alias_and_stdlib():
     assert by_module["PIL"].dependency == "pillow"
     assert by_module["no_such_pkg_xyz"].dependency is None
     assert [link.record.top_level() for link in affected_imports(links, "pillow")] == ["PIL"]
+
+
+def test_linking_dashed_alias_targets():
+    parsed = parse_imports_text(
+        "from sklearn.cluster import AgglomerativeClustering\n"
+        "import cv2\n"
+        "from dateutil.parser import parse\n"
+    )
+    links = link_imports(parsed.records, ["scikit-learn", "opencv-python", "python-dateutil"])
+    by_module = {link.record.top_level(): link for link in links}
+    assert by_module["sklearn"].dependency == "scikit-learn"
+    assert by_module["cv2"].dependency == "opencv-python"
+    assert by_module["dateutil"].dependency == "python-dateutil"
+    assert [link.record.top_level() for link in affected_imports(links, "scikit-learn")] == ["sklearn"]

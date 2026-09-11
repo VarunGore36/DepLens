@@ -53,8 +53,7 @@ def link_imports(
         norm = _norm(top)
         dependency = by_norm.get(norm)
         if dependency is None and norm in table:
-            candidate = canonicalize_name(table[norm])
-            dependency = candidate if candidate in by_norm else None
+            dependency = by_norm.get(_norm(table[norm]))
         links.append(ImportLink(record, dependency, False))
     return links
 
