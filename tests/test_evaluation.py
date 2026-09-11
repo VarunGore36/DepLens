@@ -1,6 +1,13 @@
 import pytest
 
-from deplens.evaluation import brier_score, compute_binary_metrics
+from deplens.evaluation import (
+    brier_score,
+    compute_binary_metrics,
+    results_table,
+    roc_auc,
+    score_rules,
+)
+from deplens.prediction import UpdateCase
 
 
 def test_perfect_predictions():
@@ -35,3 +42,23 @@ def test_brier_score():
     assert brier_score([], []) == 0.0
     with pytest.raises(ValueError, match="length mismatch"):
         brier_score([True], [])
+
+
+def test_roc_auc():
+    assert roc_auc([True, True, False, False], [0.9, 0.8, 0.2, 0.1]) == 1.0
+    assert roc_auc([True, False], [0.0, 1.0]) == 0.0
+    assert roc_auc([True, True], [0.5, 0.5]) == 0.0
+    assert roc_auc([], []) == 0.0
+    with pytest.raises(ValueError, match="length mismatch"):
+        roc_auc([True], [])
+
+
+def test_results_table():
+    cases = [UpdateCase("a", "1.0.0", "2.0.0", direct=True, depth=1)]
+    scores = score_rules(cases, [True])
+    plain = results_table(scores)
+    assert "| major-version | 1.00 | 1.00 | 1.00 |" in plain
+    assert "ROC-AUC" not in plain
+    probs = {rule: [1.0 if rule == "major-version" else 0.0] for rule in scores}
+    full = results_table(scores, probs, [True])
+    assert "ROC-AUC" in full and "Brier" in full

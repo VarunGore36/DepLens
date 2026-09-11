@@ -10,8 +10,13 @@ from deplens.report import analysis_markdown, predictions_markdown, risk_score, 
 
 
 def _analyze(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
     from deplens.project import analyze_project
 
+    if not Path(args.path).exists():
+        print(f"error: no such path: {args.path}", file=sys.stderr)
+        return 2
     analysis = analyze_project(args.path)
     if args.format == "markdown":
         print(analysis_markdown(analysis))
@@ -69,6 +74,28 @@ def _updates(args: argparse.Namespace) -> int:
     return 0
 
 
+def _impact(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from deplens.project import analyze_project
+
+    if not Path(args.path).exists():
+        print(f"error: no such path: {args.path}", file=sys.stderr)
+        return 2
+    analysis = analyze_project(args.path, include_objects=True)
+    objects = analysis["objects"]
+    from deplens.prediction.impact import build_impact, impact_json, impact_markdown
+
+    report = build_impact(
+        args.package, args.old, args.new, objects["graph"], objects["links"], objects["usages"]
+    )
+    if args.format == "markdown":
+        print(impact_markdown(report))
+    else:
+        print(json.dumps(impact_json(report), indent=2, sort_keys=True))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="deplens", description="Dependency impact research tool")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -95,6 +122,14 @@ def build_parser() -> argparse.ArgumentParser:
     updates.add_argument("repo", help="Git repository path")
     updates.add_argument("--limit", type=int, default=None)
     updates.set_defaults(func=_updates)
+
+    impact = sub.add_parser("impact", help="Impact report for one update in a project")
+    impact.add_argument("path", help="Project directory")
+    impact.add_argument("--package", required=True)
+    impact.add_argument("--old", default=None)
+    impact.add_argument("--new", default=None)
+    impact.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    impact.set_defaults(func=_impact)
     return parser
 
 

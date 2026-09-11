@@ -2,6 +2,12 @@
 
 > Investigating whether dependency graphs, code usage, and historical evidence can predict the impact of dependency updates before they are applied.
 
+**Status: working research prototype (v0).** The pipeline runs end to end — parsing,
+graphing, usage tracing, update mining, heuristic and test-grounded labeling, baselines,
+evaluation — against real repositories. What it has *not* done is answer the research
+question: every measurement so far is pipeline validation on tiny, weak data, not evidence
+of predictive power. This README marks each claim accordingly.
+
 ## 1. Problem Statement
 
 Modern Python projects depend on large, transitive dependency networks. Updating a single dependency — even a patch release — can break downstream code through removed APIs, changed behavior, altered transitive constraints, or build/test failures.
@@ -10,97 +16,86 @@ Current practice is largely reactive: apply the update (e.g., via Dependabot / R
 
 DepLens treats this as an open research question, not a solved engineering problem.
 
-## 2. Motivation
+## 2. What Works Today vs What Does Not
 
-- Dependency updates are frequent, often automated, and noisy.
-- Maintainers face alert fatigue from update PRs with unknown risk.
-- Breakage is unevenly distributed: most updates are safe, a minority cause failures.
-- Intuition-based heuristics (e.g., "major versions are dangerous") are uncalibrated and unevaluated.
-- A reproducible, measured understanding of update-impact signals would benefit maintainers, tool authors, and researchers — **if** reliable prediction is possible.
+Implemented and tested (91 tests, `ruff check` clean, CI runs both):
 
-The goal is empirical validation and reproducibility, not heuristics or marketing claims.
+| Area | Status | Entry points |
+|---|---|---|
+| Spec parsing (`requirements.txt`, `pyproject.toml` incl. Poetry, `poetry`/`uv`/`Pipfile` locks) | `implemented` | `deplens.dependencies` |
+| Dependency graph (direct/transitive, depth, dependents, centrality, snapshots) | `implemented` | `deplens.graph` |
+| AST import parsing, import→dependency linking, qualified API-usage tracing | `implemented` | `deplens.analysis` |
+| Git-history update detection (deduplicated, marker/extras-sensitive) | `implemented` | `deplens.updates.detection` |
+| Heuristic labels (`reverted` / `fix-suspect` / `no-signal`) | `implemented` | `deplens.updates.labeling` |
+| Worktree test-outcome labels incl. isolated venvs, era installs, `uv sync --locked` | `implemented` | `deplens.updates.test_outcomes` |
+| Baselines (major-version, direct, API-change, depth, code-usage), hybrid model, LLM seam | `implemented` | `deplens.prediction` |
+| Impact reports (affected files/APIs, rule verdicts, risk score) | `implemented` | `deplens impact` |
+| Metrics (precision/recall/F1/FP/FN, ROC-AUC, Brier), per-rule scoring, ablation, temporal splits, strata | `implemented` | `deplens.evaluation` |
+| CLI (`analyze`, `impact`, `predict`, `updates`), JSON + markdown reports, GitHub workflow + PR comments | `implemented` | `deplens.cli` |
 
-## 3. Central Research Question
+Not done / explicitly future:
 
-> **Can dependency graphs, code usage information, API relationships, and historical evidence be used to predict the impact of dependency updates before they are applied?**
+- **Any validated prediction claim.** Nothing here is shown to predict real breakage.
+- Live transitive resolution from package metadata; version-range feature coercion.
+- Scope/shadowing-precise usage analysis; relative and star imports.
+- A curated, large-scale labeled dataset (`datasets/v0` has 42 cases, 1 weak positive).
+- Classical ML / embeddings / an evaluated LLM backend (the seam exists, the backends don't).
+- Proof the tooling helps developers (Phase 7 usefulness is undemonstrated).
 
-A critical constraint:
+## 3. Quickstart
 
-> Given **only information available before the dependency update**, could we have predicted this failure?
+Requires Python 3.10+ and `uv` (or `pip`).
 
-Post-hoc explanations do not count. A signal is only useful if it was observable pre-update and improves prediction on held-out historical cases.
+```bash
+git clone <this-repo> && cd deplens
+uv sync  # or: pip install -e .
 
-### What DepLens does NOT assume
+# Project analysis (JSON default, --format markdown available)
+uv run deplens analyze /path/to/project
 
-DepLens does **not** assume breakage merely because:
+# Impact report for one update in a project (files, APIs, verdicts, risk)
+uv run deplens impact /path/to/project --package requests --old "==2.28.0" --new "==2.31.0"
 
-- a dependency has a major-version change,
-- a dependency has a known API change,
-- a dependency is deeply nested,
-- an LLM judges the update as "looking dangerous."
+# Score one hypothetical update from raw signals
+uv run deplens predict --package requests --old 1.0.0 --new 2.0.0 --affected-imports 3
 
-These may be useful signals, but each must be empirically evaluated for precision, recall, and calibration.
+# Labeled dependency-update history of a git checkout
+uv run deplens updates /path/to/git-repo
 
-## 4. Research Questions
+# Tests, lint, and the committed v0 experiment
+uv run --with pytest pytest -q
+uv run --with ruff ruff check src tests scripts
+uv run python experiments/reproduce_v0.py
+```
 
-### RQ1 — Affected-code identification
+`updates` needs a git checkout (it shells out to `git log`/`git show`); `analyze` works on
+any directory and reports unparsable files under `parse_errors` instead of crashing.
 
-How accurately can dependency and code-usage information identify code that *may* be affected by a dependency update?
+## 4. Reproducing the Reported Results
 
-This covers mapping from a changed dependency → import sites → using modules/functions/classes.
+The v0 dataset (`datasets/v0/cases.jsonl`, 42 cases — 40 weak-label, 2 test-grounded;
+provenance and limits in `datasets/v0/README.md`) and its reproduction script are committed:
 
-### RQ2 — Predictive signals
+```bash
+uv run python experiments/reproduce_v0.py --out /tmp/v0-check
+diff /tmp/v0-check/metrics.json experiments/results/v0/metrics.json && echo REPRODUCED
+```
 
-Which signals are most predictive of actual downstream breakage?
+Expected output (also committed at `experiments/results/v0/`):
 
-Candidate signals (to be evaluated, not assumed):
+| Rule | Precision | Recall | F1 | FP rate | FN rate | ROC-AUC | Brier |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| api-change | 0.00 | 0.00 | 0.00 | 0.00 | 1.00 | 0.17 | 0.02 |
+| code-usage | 0.04 | 1.00 | 0.07 | 0.61 | 0.00 | 0.46 | 0.60 |
+| dependency-depth | 0.17 | 1.00 | 0.29 | 0.12 | 0.00 | 0.88 | 0.12 |
+| direct-dependency | 0.00 | 0.00 | 0.00 | 0.88 | 1.00 | 0.00 | 0.88 |
+| major-version | 0.00 | 0.00 | 0.00 | 0.05 | 1.00 | 0.17 | 0.07 |
 
-- dependency depth
-- direct vs. transitive dependency
-- version distance
-- semantic-version change type (major/minor/patch)
-- removed / changed APIs
-- number of affected imports
-- affected functions / classes
-- dependency centrality in the graph
-- test coverage of affected code
-- historical breakage frequency of the dependency
-- maintainer / release activity
-- number of downstream dependents
+Ablation delta F1 (usage minus metadata): -0.21. n=42 with a single weak positive, so
+treat this as a regression test for the harness, not as findings. Ad-hoc mining runs live
+under `experiments/results/` but are git-ignored by convention; only `v0/` is versioned.
 
-### RQ3 — Pre-update predictability
-
-Can historical dependency-update failures be predicted *before* the update occurs?
-
-This requires a dated historical dataset with strict temporal splits: features computed at parent commit, labels derived from post-update CI/test outcomes.
-
-### RQ4 — Value of usage information
-
-Does combining dependency metadata with source-code usage provide substantially better predictions than dependency metadata alone?
-
-This is tested by ablation: metadata-only baseline vs. metadata + usage models.
-
-### RQ5 — ML / LLM value-add
-
-Can ML or LLM-based approaches improve upon deterministic / static-analysis baselines?
-
-LLM-assisted API impact analysis is treated as an experimental method to be compared against deterministic baselines, not assumed superior.
-
-See also [`docs/research_questions.md`](docs/research_questions.md).
-
-## 5. Hypotheses
-
-Explicitly marked as **hypotheses (unvalidated)**, not facts:
-
-- **H1 (hypothetical):** Direct dependencies are generally easier to assess for update impact than deeply transitive dependencies.
-- **H2 (hypothetical):** Actual API usage provides stronger predictive information than dependency relationships alone.
-- **H3 (hypothetical):** Dependency updates involving removed or modified APIs are more likely to cause downstream failures.
-- **H4 (hypothetical):** A hybrid model combining dependency metadata, source-code usage, and historical information will outperform simple version-based heuristics.
-- **H5 (hypothetical):** LLM-assisted analysis may improve difficult API-level impact analysis, but should be evaluated against deterministic baselines rather than assumed to be superior.
-
-Each hypothesis maps to one or more RQs and will be accepted, rejected, or refined based on measured results.
-
-## 6. Proposed Methodology
+## 5. Architecture
 
 ```mermaid
 flowchart TD
@@ -115,48 +110,6 @@ flowchart TD
     I --> J[Evaluation]
 ```
 
-Stages:
-
-1. **Repository ingestion:** clone / sample Python repositories with history.
-2. **Dependency extraction:** parse `requirements.txt`, `pyproject.toml`, lockfiles where practical, plus installed package metadata.
-3. **Dependency graph:** build direct/transitive graph with version constraints. Status: `planned`.
-4. **Source-code / import analysis:** parse Python source (AST), resolve imports to dependencies. Status: `planned`.
-5. **API / usage analysis:** where feasible, map imports to functions/classes/APIs used. Status: `planned / experimental`.
-6. **Dependency update detection:** identify update commits (e.g., Dependabot, manual bumps) via Git history. Status: `planned`.
-7. **Potential impact estimation:** trace potentially affected code given a hypothetical update. Status: `planned`.
-8. **Historical failure dataset:** label updates with post-update test/build outcomes as ground truth. Status: `planned`.
-9. **Prediction:** apply baselines, then ML/LLM methods using only pre-update features. Status: `planned`.
-10. **Evaluation:** report precision, recall, F1, FP/FN rates, calibration on held-out temporal splits. Status: `planned`.
-
-Detailed protocol: [`docs/methodology.md`](docs/methodology.md).
-
-## 7. Current Scope
-
-Initial scope is intentionally narrow to avoid overengineering:
-
-**Included:**
-
-- Python repositories only (no multi-language support initially)
-- Python package dependencies
-- `requirements.txt`
-- `pyproject.toml`
-- lockfiles where practical (`poetry.lock`, `uv.lock`, `requirements*.lock`, `Pipfile.lock`)
-- Python imports (`import`, `from ... import`)
-- dependency / version relationships
-- API / function / class usage where technically feasible
-- Git history
-- dependency update commits
-- test / build failures associated with updates
-
-**Explicitly out of scope for v0:**
-
-- Non-Python ecosystems (npm, Cargo, Go modules, Maven)
-- Dynamic analysis / runtime tracing
-- Automated fixing / codemods
-- Production deployment / monitoring
-
-## 8. Project Architecture / Pipeline
-
 ```mermaid
 flowchart LR
     subgraph Inputs
@@ -165,7 +118,7 @@ flowchart LR
         SRC[Python source]
     end
 
-    subgraph Core [Planned modules]
+    subgraph Core [Implemented modules]
         DEP[deplens.dependencies<br/>spec parsing]
         GRAPH[deplens.graph<br/>dependency graph]
         ANAL[deplens.analysis<br/>imports & API usage]
@@ -183,155 +136,73 @@ flowchart LR
     PRED --> EVAL
 ```
 
-Source layout (`src/deplens/`):
+Supporting pieces: `deplens/project.py` (whole-project analysis), `deplens/report.py`
+(JSON/markdown reports, 0–100 risk scores), `deplens/cli.py` (entry point),
+`scripts/` (experiment runners, PR comment poster), `experiments/` (reproducible runs).
 
-| Module | Purpose | Status |
-|---|---|---|
-| `dependencies/` | Parse requirements, pyproject, lockfiles | `planned` |
-| `graph/` | Direct/transitive graph model, centrality, depth | `planned` |
-| `analysis/` | AST import parsing, usage mapping | `planned` |
-| `updates/` | Git-history update detection | `planned` |
-| `prediction/` | Baselines, later ML/LLM methods | `planned` |
-| `evaluation/` | Precision/recall/F1, FP/FN, calibration | `planned` |
+## 6. Methodology, Assumptions, and Limitations
 
-> No analysis engine is implemented yet. Modules currently contain only documented stubs.
+Protocol in full: [`docs/methodology.md`](docs/methodology.md). The non-negotiable rule:
 
-## 9. Roadmap
+> Given **only information available before the dependency update**, could we have predicted this failure?
 
-See [`docs/roadmap.md`](docs/roadmap.md) for the full milestone breakdown.
+Features are reconstructed at each update's parent commit (`git archive` / worktrees);
+labels come from post-update evidence. What the current implementation assumes, and where
+it is known to fall short:
 
-| Phase | Focus | Status |
-|---|---|---|
-| **Phase 0 — Project setup** | Repo structure, docs, RQs, methodology, experiment tracking | `in progress` |
-| **Phase 1 — Dependency graph** | Parse specs, build direct/transitive graph, package metadata | `planned` |
-| **Phase 2 — Code usage analysis** | Parse source, identify imports and dependency usage, investigate API-level mapping | `planned` |
-| **Phase 3 — Dependency update dataset** | Collect repos/commits, determine failures, establish ground-truth labels | `planned` |
-| **Phase 4 — Baselines** | Major-version, direct-dependency, API-change, depth heuristics | `planned` |
-| **Phase 5 — Evaluation** | Precision, recall, F1, FP/FN rates, calibration | `planned` |
-| **Phase 6 — Advanced methods** | Graph features, classical ML, embeddings, LLM-assisted analysis, hybrids | `experimental / planned` |
-| **Phase 7 — Developer tool** | CLI, reports, GitHub Action, PR comments, risk scoring — only if justified | `hypothetical` |
+- **Assumes spec files describe reality.** Dev-only, docs-only, and undeclared dependencies are invisible or noisy by construction.
+- **Affected sets are over-approximations.** DepLens traces what the repo *uses*, not what the new version *changed* — every API listed in an impact report is "potentially affected," never "known broken."
+- **Weak labels are proxies.** `reverted` / `fix-suspect` / `no-signal` correlate with breakage at best; absence of a revert is not evidence of safety.
+- **Era reproduction is partial.** Fresh venvs install era requirements, test extras, and `uv.lock` closures where available — but undeclared CI-only deps and floating transitive pins still break old suites (both observed and documented in past run notes). Such cases are excluded, not forced.
+- **No leakage controls beyond parent-state reconstruction.** Temporal splits and strata exist in code; published results don't yet use them at scale.
 
-Phase 7 is explicitly gated on Phases 3–5 producing evidence that prediction is reliable enough to be useful.
+## 7. Central Research Question
 
-## 10. Evaluation Strategy
+> **Can dependency graphs, code usage information, API relationships, and historical evidence be used to predict the impact of dependency updates before they are applied?**
 
-All claims require measurement on a held-out historical dataset with strict pre-update feature constraints.
+DepLens does **not** assume breakage merely because of a major-version change, a known API
+change, deep nesting, or an LLM's judgment. Each is an unevaluated signal until measured.
 
-Primary metrics:
+Sub-questions (see [`docs/research_questions.md`](docs/research_questions.md)): RQ1 (affected-code
+identification), RQ2 (which signals predict breakage), RQ3 (pre-update predictability), RQ4
+(metadata vs metadata+usage, tested by ablation), RQ5 (ML/LLM vs deterministic baselines).
 
-- precision
-- recall
-- F1
-- false-positive rate
-- false-negative rate
-- calibration (where probabilistic outputs exist)
+Tentative hypotheses, explicitly unvalidated: H1 direct beats transitive assessability; H2
+usage beats pure relationships; H3 removed/modified APIs break more; H4 hybrids beat
+version heuristics; H5 LLMs help only if they beat baselines. Accept, reject, or refine on data.
 
-Methodological requirements:
+## 8. Scope
 
-- Temporal splits (no future leakage into training features).
-- Ablations for RQ4 (metadata-only vs. metadata + usage).
-- Baselines run first; advanced methods compared against them (RQ5).
-- Report per-stratum results (direct vs. transitive, major vs. minor/patch).
-- Publish datasets, code, seeds, and environment specs for reproducibility.
+Python only: `requirements.txt`, `pyproject.toml`, common lockfiles, imports, version
+relationships, feasible API usage, Git history, update commits, test/build outcomes.
+Out of scope: other ecosystems, dynamic analysis, autofixes, production monitoring.
 
-Baselines (Phase 4, `planned`):
+## 9. Evaluation Strategy
 
-- major-version change heuristic
-- direct-dependency heuristic
-- API-change heuristic
-- dependency-depth heuristic
+Held-out historical cases, pre-update features only: precision, recall, F1, FP/FN rates,
+ROC-AUC, Brier calibration; temporal splits; RQ4 ablations; RQ5 baseline-first comparisons;
+per-stratum slices (direct/transitive, major/non-major). Baselines: major-version,
+direct-dependency, API-change, dependency-depth, plus code-usage for ablations.
 
-See `experiments/baselines/` for future baseline definitions and `experiments/results/` for outputs.
+## 10. Current Status and Roadmap
 
-## 11. Current Status
+Full breakdown: [`docs/roadmap.md`](docs/roadmap.md). Short version: Phases 0–2 engine,
+update detection with heuristic and test-grounded labels, baselines, evaluation toolkit,
+initial advanced methods, and initial tooling are built; large-scale labeled data, validated
+claims, and any ML/LLM evaluation are not. Phase 7 (developer tooling) stays gated on
+evidence that prediction is reliable enough to matter.
 
-- [x] Project framing, research questions, methodology, roadmap
-- [x] First real-data smoke run — 40 updates across `requests`/`httpx` with parent-commit features and weak labels (`experiments/results/2026-09-09-first-run/`); re-ran after fixing the duplicate-line phantom-update bug, 1 weak positive; numbers are pipeline validation, not evidence
-- [x] First test-grounded run — 15 records from DepLens's own history (`experiments/results/2026-09-10-test-grounded/`); 1 decidable passing case, 12 pre-suite parents (`no-tests`), 2 parentless root records; confirms the machinery works but yields no evaluation signal yet
-- [x] Isolated test-outcome labeling — fresh per-commit venvs with era installs plus declared test extras, era pytest respected; trials on `httpx`/`urllib3` prove the machinery but yield no decidable cases yet (undeclared CI deps; transitive-drift breakage)
-- [x] Key methodology finding (proven, not assumed) — partial era pins do not reproduce era CI envs: unpinned transitive deps float to modern versions and break old suites (era Quart vs latest Flask). Full-closure eras (`uv.lock`) are the viable next target
-- [x] First decidable real-world case — `cryptography` 47→49 `uv.lock` bump in `urllib3` (`experiments/results/2026-09-11-uv-lock/`): full era closure via `uv sync --locked`, suites green, update safe; `code-usage` and `direct-dependency` false-positived on it (direct, depth 1, 6 imports, 15 APIs)
-- [x] Lint-clean (`ruff check`), 91 tests green, repo CI (pytest + ruff via GitHub Actions)
-- [ ] Phase 1: dependency graph — in progress (requirements.txt + pyproject.toml + poetry/uv/Pipfile lockfiles, graph model with depth/dependents; live transitive resolution pending)
-- [ ] Phase 2: code usage analysis — in progress (AST import parsing, collection, import→dependency linking, qualified API usage with per-dependency filtering; scope/shadowing precision pending)
-- [ ] Phase 3: dependency update dataset — in progress (git-history update detection, heuristic and worktree test-outcome labeling incl. isolated era installs; curated real-data dataset pending)
-- [ ] Phase 4: baselines — in progress (four roadmap heuristics plus a code-usage rule for RQ4 ablation)
-- [ ] Phase 5: evaluation — in progress (binary metrics, Brier score, per-rule scoring, metadata-vs-usage ablation, temporal splits, per-stratum reporting; published real-data results pending)
-- [ ] Phase 6: advanced methods — initial implementation, unevaluated (graph features, grid-fit hybrid model, experimental LLM-adapter seam; no ML/embeddings evaluation on real data yet)
-- [ ] Phase 7: developer tool — initial implementation, usefulness undemonstrated (`deplens analyze|predict|updates` CLI, JSON/markdown reports, 0–100 risk scoring, GitHub workflow + PR comments)
+## 11. Contributing
 
-**DepLens cannot currently predict dependency failures.** This repository is a research scaffold for investigating whether reliable prediction is possible.
+Research-stage contributions welcome, especially dataset curation, baseline reproductions,
+static-analysis improvements, and methodology critique. Open an issue first; keep PRs small
+with reproduction steps; no new ML/LLM dependencies until Phase 4 baselines exist for them
+to beat; update `methodology.md`/`roadmap.md` when changing protocol.
 
-Legend used throughout docs: `implemented` / `in progress` / `planned` / `experimental` / `hypothetical`.
+## 12. License
 
-## 12. Running DepLens
-
-Requires Python 3.10+ and `uv` (or `pip`).
-
-```bash
-uv sync  # one-time setup; or: pip install -e .
-
-# Analyze a Python project directory (JSON default, --format markdown available)
-uv run deplens analyze /path/to/project
-
-# Score one hypothetical update
-uv run deplens predict --package requests --old 1.0.0 --new 2.0.0 --affected-imports 3
-
-# Labeled dependency-update history of a git checkout
-uv run deplens updates /path/to/git-repo
-
-# Test suite and lint
-uv run --with pytest pytest -q
-uv run --with ruff ruff check src tests scripts
-```
-
-`updates` needs a git checkout (it shells out to `git log`/`git show`); `analyze`
-works on any directory and reports unparsable files under `parse_errors` instead
-of crashing. Outputs are unevaluated research signals, not predictions.
-
-## 13. Reproducibility Philosophy
-
-- Everything needed to reproduce a result (code + data pointers + environment + seeds) is versioned.
-- Experiments write structured outputs to `experiments/results/`; never overwrite prior results silently.
-- Datasets are documented in `datasets/README.md` with provenance, licensing, and collection scripts.
-- Negative results are results: failed signals and poorly calibrated models are reported, not hidden.
-- No "it worked on my machine": lockfiles, pinned dev dependencies, and CI checks are required once code lands.
-
-## 14. Future Possibilities
-
-Status: `hypothetical` — pursued only if Phases 3–5 justify it.
-
-- CLI for local update-impact reports
-- Machine-readable risk scores for update PRs
-- GitHub Action with PR comments
-- IDE / code-review integrations
-- Cross-ecosystem replication (npm, Cargo) after Python validation
-
-These are not commitments. They are conditional directions.
-
-## 15. Contributing
-
-Research-stage contributions are welcome, especially:
-
-- dataset curation (repos with labeled update failures),
-- reproduction of baselines,
-- static-analysis improvements,
-- evaluation methodology critique.
-
-Process:
-
-1. Open an issue describing the proposed experiment or change.
-2. Keep PRs small and include reproduction steps.
-3. Do not add ML/LLM dependencies until Phase 4 baselines exist.
-4. Update relevant docs (`methodology.md`, `roadmap.md`) when changing protocol.
-
-No code of conduct or governance is defined yet — that is part of Phase 0 follow-up.
-
-## 16. License
-
-Apache License 2.0 — see [LICENSE](LICENSE).
-
-Dataset contents may carry their own upstream licenses; each dataset entry documents its provenance and license in `datasets/README.md`.
+Apache License 2.0 — see [LICENSE](LICENSE). Dataset rows document their upstream
+provenance in `datasets/v0/README.md`.
 
 ---
 

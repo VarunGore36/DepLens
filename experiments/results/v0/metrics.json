@@ -1,0 +1,86 @@
+{
+  "n_cases": 42,
+  "n_positive": 1,
+  "rules": {
+    "major-version": {
+      "tp": 0,
+      "tn": 39,
+      "fp": 2,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "false_positive_rate": 0.04878048780487805,
+      "false_negative_rate": 1.0,
+      "accuracy": 0.9285714285714286,
+      "support": 42
+    },
+    "direct-dependency": {
+      "tp": 0,
+      "tn": 5,
+      "fp": 36,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "false_positive_rate": 0.8780487804878049,
+      "false_negative_rate": 1.0,
+      "accuracy": 0.11904761904761904,
+      "support": 42
+    },
+    "api-change": {
+      "tp": 0,
+      "tn": 41,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 1.0,
+      "accuracy": 0.9761904761904762,
+      "support": 42
+    },
+    "dependency-depth": {
+      "tp": 1,
+      "tn": 36,
+      "fp": 5,
+      "fn": 0,
+      "precision": 0.16666666666666666,
+      "recall": 1.0,
+      "f1": 0.2857142857142857,
+      "false_positive_rate": 0.12195121951219512,
+      "false_negative_rate": 0.0,
+      "accuracy": 0.8809523809523809,
+      "support": 42
+    },
+    "code-usage": {
+      "tp": 1,
+      "tn": 16,
+      "fp": 25,
+      "fn": 0,
+      "precision": 0.038461538461538464,
+      "recall": 1.0,
+      "f1": 0.07407407407407407,
+      "false_positive_rate": 0.6097560975609756,
+      "false_negative_rate": 0.0,
+      "accuracy": 0.40476190476190477,
+      "support": 42
+    }
+  },
+  "roc_auc": {
+    "api-change": 0.17073170731707318,
+    "code-usage": 0.4634146341463415,
+    "dependency-depth": 0.8780487804878049,
+    "direct-dependency": 0.0,
+    "major-version": 0.17073170731707318
+  },
+  "brier": {
+    "api-change": 0.023809523809523808,
+    "code-usage": 0.5952380952380952,
+    "dependency-depth": 0.11904761904761904,
+    "direct-dependency": 0.8809523809523809,
+    "major-version": 0.07142857142857142
+  },
+  "ablation_delta_f1": -0.21164021164021163
+}

@@ -52,3 +52,18 @@ def brier_score(y_true: list[bool], y_prob: list[float]) -> float:
     if not y_true:
         return 0.0
     return sum((p - (1.0 if t else 0.0)) ** 2 for t, p in zip(y_true, y_prob)) / len(y_true)
+
+
+def roc_auc(y_true: list[bool], y_score: list[float]) -> float:
+    if len(y_true) != len(y_score):
+        raise ValueError(f"length mismatch: {len(y_true)} true vs {len(y_score)} scored")
+    positives = sum(1 for t in y_true if t)
+    negatives = len(y_true) - positives
+    if positives == 0 or negatives == 0:
+        return 0.0
+    ranked = sorted(range(len(y_true)), key=lambda i: (y_score[i], i))
+    rank_sum = 0.0
+    for position, i in enumerate(ranked, start=1):
+        if y_true[i]:
+            rank_sum += position
+    return (rank_sum - positives * (positives + 1) / 2) / (positives * negatives)

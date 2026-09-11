@@ -3,6 +3,12 @@ import json
 from deplens.cli import main
 
 
+def test_analyze_missing_path(tmp_path, capsys):
+    assert main(["analyze", str(tmp_path / "nope")]) == 2
+    assert "no such path" in capsys.readouterr().err
+    assert main(["impact", str(tmp_path / "nope"), "--package", "a"]) == 2
+
+
 def test_analyze_json(tmp_path, capsys):
     (tmp_path / "requirements.txt").write_text("requests==2.28.0\n")
     (tmp_path / "app.py").write_text("import requests\nrequests.get('https://x.test')\n")
@@ -41,3 +47,15 @@ def test_predict_hybrid_flag(capsys):
     assert main(["predict", "--package", "a", "--hybrid", "--old", "1.0.0", "--new", "2.0.0"]) == 0
     data = json.loads(capsys.readouterr().out)
     assert any(p["rule"] == "hybrid" for p in data["predictions"])
+
+
+def test_impact_json_and_markdown(tmp_path, capsys):
+    (tmp_path / "requirements.txt").write_text("requests==2.28.0\n")
+    (tmp_path / "app.py").write_text("import requests\nrequests.get('https://x.test')\n")
+    assert main(["impact", str(tmp_path), "--package", "requests", "--old", "==2.28.0", "--new", "==2.31.0", "--format", "json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["package"] == "requests"
+    assert data["affected_apis"] == ["requests.get"]
+    assert str(tmp_path / "app.py") in data["affected_files"]
+    assert main(["impact", str(tmp_path), "--package", "requests", "--format", "markdown"]) == 0
+    assert "# Impact: requests" in capsys.readouterr().out

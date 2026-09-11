@@ -22,10 +22,13 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Experiments (keep definitions, ignore large outputs)
+# Experiments (keep definitions, ignore large ad-hoc outputs;
+# versioned v0 results are the exception so reported numbers stay reproducible)
 experiments/results/*/
 !experiments/results/README.md
 !experiments/results/.gitkeep
+!experiments/results/v0/
+!experiments/results/v0/*
 
 # Datasets (code + docs tracked; raw dumps ignored)
 datasets/raw/
